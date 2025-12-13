@@ -6,181 +6,233 @@
 <title>RATATOK</title>
 
 <style>
-body {
-  margin: 0;
-  background: #0b0b0b;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
+*{box-sizing:border-box}
+body{
+margin:0;
+background:linear-gradient(180deg,#0d0d0d,#000);
+color:#fff;
+font-family:-apple-system,BlinkMacSystemFont,Arial;
+text-align:center
 }
-
-.screen { display: none; padding-top: 20px; }
-.screen.active { display: block; }
-
-h1 { margin: 10px 0; }
-
-#ratBtn {
-  width: 220px;
-  height: 220px;
-  border-radius: 30px;
-  font-size: 100px;
-  border: none;
-  background: #ffcc00;
+.screen{display:none;padding-bottom:100px}
+.screen.active{display:block}
+.header{padding:20px}
+.stats{opacity:.85}
+.progress{
+width:80%;
+height:10px;
+background:#222;
+border-radius:10px;
+margin:10px auto;
+overflow:hidden
 }
-
-.stats { margin: 10px; font-size: 18px; }
-
-.menu {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: #111;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
+.progress div{
+height:100%;
+background:#ffd700;
+width:0%
 }
-
-.menu button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 16px;
+.tap-area{margin-top:30px}
+#ratBtn{
+width:260px;
+height:260px;
+border-radius:40px;
+border:none;
+font-size:120px;
+background:radial-gradient(circle,#ffd700,#ffae00);
+box-shadow:0 20px 40px rgba(255,200,0,.4);
+transition:.1s
 }
-
-.card {
-  background: #1c1c1c;
-  margin: 10px;
-  padding: 15px;
-  border-radius: 12px;
+#ratBtn:active{transform:scale(.92)}
+.card{
+background:#151515;
+margin:15px;
+padding:16px;
+border-radius:18px
 }
-
-.buy {
-  background: #00c853;
-  border: none;
-  padding: 10px;
-  width: 100%;
-  font-size: 16px;
-  border-radius: 10px;
+.buy{
+width:100%;
+padding:14px;
+border-radius:14px;
+border:none;
+background:#00c853;
+font-size:16px;
+font-weight:bold
+}
+.menu{
+position:fixed;
+bottom:0;
+width:100%;
+background:#0f0f0f;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+border-top:1px solid #222
+}
+.menu button{
+background:none;
+border:none;
+color:#aaa;
+font-size:14px
+}
+.menu button.active{color:#ffd700}
+.lang{position:fixed;top:10px;right:10px}
+.floating{
+position:absolute;
+color:#ffd700;
+font-size:22px;
+animation:float 1s forwards
+}
+@keyframes float{
+from{opacity:1;transform:translateY(0)}
+to{opacity:0;transform:translateY(-60px)}
 }
 </style>
 </head>
 
 <body>
 
-<!-- GAME -->
-<div id="game" class="screen active">
-  <h1>🐀 RATATOK</h1>
-  <div class="stats">
-    Уровень: <span id="level">1</span><br>
-    Монеты: <span id="coins">0</span>
-  </div>
-  <button id="ratBtn">🐁</button>
+<div class="lang">
+<button onclick="setLang('ru')">RU</button>
+<button onclick="setLang('en')">EN</button>
 </div>
 
-<!-- REFERRALS -->
-<div id="refs" class="screen">
-  <h1>👥 Рефералы</h1>
-  <div class="card">
-    Приглашено: <b>0</b><br><br>
-    <button class="buy" onclick="copyRef()">Скопировать ссылку</button>
-  </div>
+<!-- GAME -->
+<div id="game" class="screen active">
+<div class="header">
+<h1 id="title">🐀 RATATOK</h1>
+<div class="stats">
+<span id="lvlText">Уровень</span>: <b id="level">1</b> · 
+<span id="coinText">Монеты</span>: <b id="coins">0</b>
+</div>
+<div class="progress"><div id="bar"></div></div>
+</div>
+<div class="tap-area">
+<button id="ratBtn">🐁</button>
+</div>
 </div>
 
 <!-- SHOP -->
 <div id="shop" class="screen">
-  <h1>🛒 Магазин</h1>
-
-  <div class="card">
-    +1 за тап (50 монет)
-    <button class="buy" onclick="buyTap()">Купить</button>
-  </div>
-
-  <div class="card">
-    Пассив +1/сек (100)
-    <button class="buy" onclick="buyPassive()">Купить</button>
-  </div>
-
-  <div class="card">
-    🔮 Купить за TON (скоро)
-    <button class="buy" disabled>TON</button>
-  </div>
+<h1>🛒 Магазин</h1>
+<div class="card">
++1 за тап (50)
+<button class="buy" onclick="buyTap()">Купить</button>
+</div>
+<div class="card">
+Пассив +1/сек (100)
+<button class="buy" onclick="buyPassive()">Купить</button>
+</div>
+<div class="card">
+💎 TON (скоро)
+<button class="buy" disabled>TON</button>
+</div>
 </div>
 
-<!-- MENU -->
+<!-- REF -->
+<div id="refs" class="screen">
+<h1>👥 Рефералы</h1>
+<div class="card">
+<button class="buy" onclick="copyRef()">Скопировать ссылку</button>
+</div>
+</div>
+
+<!-- AIRDROP -->
+<div id="airdrop" class="screen">
+<h1>🎁 Airdrop</h1>
+<div class="card">
+Очки: <b id="air">0</b>
+</div>
+</div>
+
 <div class="menu">
-  <button onclick="openScreen('game')">🎮 Игра</button>
-  <button onclick="openScreen('refs')">👥 Рефы</button>
-  <button onclick="openScreen('shop')">🛒 Магазин</button>
+<button class="active" onclick="openScreen('game',this)">🎮</button>
+<button onclick="openScreen('shop',this)">🛒</button>
+<button onclick="openScreen('refs',this)">👥</button>
+<button onclick="openScreen('airdrop',this)">🎁</button>
 </div>
 
 <script>
-let coins = +localStorage.getItem('coins') || 0;
-let level = +localStorage.getItem('level') || 1;
-let tapPower = +localStorage.getItem('tapPower') || 1;
-let passive = +localStorage.getItem('passive') || 0;
+let coins=+localStorage.getItem('coins')||0
+let level=+localStorage.getItem('level')||1
+let tapPower=+localStorage.getItem('tapPower')||1
+let passive=+localStorage.getItem('passive')||0
+let airdrop=+localStorage.getItem('air')||0
+let lang=localStorage.getItem('lang')||'ru'
 
-const coinsEl = document.getElementById('coins');
-const levelEl = document.getElementById('level');
-const ratBtn = document.getElementById('ratBtn');
+const rats=["🐁","🐀","🐹","👑🐀"]
 
-function save() {
-  localStorage.setItem('coins', coins);
-  localStorage.setItem('level', level);
-  localStorage.setItem('tapPower', tapPower);
-  localStorage.setItem('passive', passive);
+const t={
+ru:{lvl:"Уровень",coin:"Монеты"},
+en:{lvl:"Level",coin:"Coins"}
 }
 
-function updateUI() {
-  coinsEl.textContent = coins;
-  levelEl.textContent = level;
-  ratBtn.textContent = level >= 5 ? "🐀" : "🐁";
+function save(){
+localStorage.setItem('coins',coins)
+localStorage.setItem('level',level)
+localStorage.setItem('tapPower',tapPower)
+localStorage.setItem('passive',passive)
+localStorage.setItem('air',airdrop)
+localStorage.setItem('lang',lang)
 }
 
-let lastTap = 0;
-ratBtn.onclick = () => {
-  const now = Date.now();
-  if (now - lastTap < 80) return; // античит
-  lastTap = now;
-
-  coins += tapPower;
-  if (coins >= level * 200) level++;
-  save();
-  updateUI();
-};
-
-setInterval(() => {
-  coins += passive;
-  save();
-  updateUI();
-}, 1000);
-
-function buyTap() {
-  if (coins >= 50) {
-    coins -= 50;
-    tapPower++;
-    save();
-  }
+function updateUI(){
+coinsEl.textContent=coins
+levelEl.textContent=level
+bar.style.width=Math.min(100,(coins%(level*200))/(level*2))+"%"
+ratBtn.textContent=rats[Math.min(level-1,rats.length-1)]
+air.textContent=airdrop
+lvlText.textContent=t[lang].lvl
+coinText.textContent=t[lang].coin
 }
 
-function buyPassive() {
-  if (coins >= 100) {
-    coins -= 100;
-    passive++;
-    save();
-  }
+const coinsEl=coins
+const levelEl=level
+
+let lastTap=0
+ratBtn.onclick=e=>{
+const now=Date.now()
+if(now-lastTap<80)return
+lastTap=now
+coins+=tapPower
+airdrop++
+if(coins>=level*200)level++
+spawn("+ "+tapPower,e)
+save();updateUI()
 }
 
-function openScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+setInterval(()=>{
+coins+=passive
+save();updateUI()
+},1000)
+
+function spawn(txt,e){
+const d=document.createElement("div")
+d.className="floating"
+d.textContent=txt
+d.style.left=e.clientX+"px"
+d.style.top=e.clientY+"px"
+document.body.appendChild(d)
+setTimeout(()=>d.remove(),1000)
 }
 
-function copyRef() {
-  navigator.clipboard.writeText("https://t.me/ratatok_bot?start=ref123");
-  alert("Ссылка скопирована");
+function buyTap(){if(coins>=50){coins-=50;tapPower++;save()}}
+function buyPassive(){if(coins>=100){coins-=100;passive++;save()}}
+
+function openScreen(id,b){
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'))
+document.getElementById(id).classList.add('active')
+document.querySelectorAll('.menu button').forEach(x=>x.classList.remove('active'))
+b.classList.add('active')
 }
 
-updateUI();
+function copyRef(){
+navigator.clipboard.writeText("https://t.me/ratatok_bot?start=ref")
+alert("Скопировано")
+}
+
+function setLang(l){lang=l;save();updateUI()}
+
+updateUI()
 </script>
 
 </body>
