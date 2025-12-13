@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>RATATOK</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       background: #111;
       color: white;
       text-align: center;
       font-family: Arial;
-      margin-top: 60px;
+      margin-top: 50px;
     }
     button {
       font-size: 40px;
@@ -24,51 +25,51 @@
 
   <h1>🐀 RATATOK</h1>
   <p>Монеты: <span id="coins">0</span></p>
+  <p>⚡ Энергия: <span id="energy">100</span></p>
 
   <button onclick="tap()">🐀</button>
 
- <script>
-  // ====== МОНЕТЫ ======
-  let coins = localStorage.getItem("ratatok_coins");
-  coins = coins ? parseInt(coins) : 0;
+  <script>
+    // ===== ПАРАМЕТРЫ =====
+    const maxEnergy = 100;
+    let tapPower = 1;
 
-  // ====== ЭНЕРГИЯ ======
-  let energy = localStorage.getItem("ratatok_energy");
-  energy = energy ? parseInt(energy) : 100;
+    // ===== МОНЕТЫ =====
+    let coins = localStorage.getItem("ratatok_coins");
+    coins = coins ? parseInt(coins) : 0;
 
-  const coinsEl = document.getElementById("coins");
-  const energyEl = document.getElementById("energy");
+    // ===== ЭНЕРГИЯ =====
+    let energy = localStorage.getItem("ratatok_energy");
+    energy = energy ? parseInt(energy) : maxEnergy;
 
-  coinsEl.textContent = coins;
-  energyEl.textContent = energy;
-
-  function tap() {
-    if (energy <= 0) return;
-
-    coins += tapPower;
-    energy--;
+    const coinsEl = document.getElementById("coins");
+    const energyEl = document.getElementById("energy");
 
     coinsEl.textContent = coins;
     energyEl.textContent = energy;
 
-    localStorage.setItem("ratatok_coins", coins);
-    localStorage.setItem("ratatok_energy", energy);
-  }
+    function tap() {
+      if (energy <= 0) return;
 
-  // ====== ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ======
-  setInterval(() => {
-    if (energy < maxEnergy) {
-      energy++;
+      coins += tapPower;
+      energy--;
+
+      coinsEl.textContent = coins;
       energyEl.textContent = energy;
+
+      localStorage.setItem("ratatok_coins", coins);
       localStorage.setItem("ratatok_energy", energy);
     }
-  }, 2000); // каждые 2 секунды
 
-  // ====== ПАРАМЕТРЫ ИГРЫ ======
-  let tapPower = 1;
-  let maxEnergy = 100;
-</script>
-
+    // ===== ВОССТАНОВЛЕНИЕ ЭНЕРГИИ =====
+    setInterval(() => {
+      if (energy < maxEnergy) {
+        energy++;
+        energyEl.textContent = energy;
+        localStorage.setItem("ratatok_energy", energy);
+      }
+    }, 2000);
+  </script>
 
 </body>
 </html>
