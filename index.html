@@ -1,186 +1,202 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>RATATOK</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body {
-  background:#0f0f0f;
-  color:white;
+body{
+  background:#0e0e0e;
+  color:#fff;
   font-family:Arial;
-  text-align:center;
   margin:0;
-  padding:20px;
-  overflow:hidden;
+  padding:16px;
+  text-align:center;
 }
-button {
-  border:none;
-  border-radius:16px;
-  padding:14px 20px;
-  margin:6px;
-  font-size:16px;
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
-#tapBtn {
-  font-size:42px;
-  padding:30px;
-  background:gold;
-}
-.card {
-  background:#1c1c1c;
+.card{
+  background:#1b1b1b;
   border-radius:18px;
   padding:14px;
   margin:10px 0;
 }
-.plus {
+#rat{
+  font-size:64px;
+  margin:10px 0;
+}
+#tapBtn{
+  font-size:42px;
+  padding:30px;
+  border-radius:22px;
+  border:none;
+  background:gold;
+}
+.shop button{
+  width:100%;
+  margin:6px 0;
+  padding:14px;
+  border-radius:14px;
+  border:none;
+  background:#333;
+  color:white;
+}
+.plus{
   position:absolute;
   color:gold;
   font-size:24px;
-  animation: fly 1s ease-out forwards;
+  animation:fly 1s ease-out forwards;
   pointer-events:none;
 }
-@keyframes fly {
-  from {opacity:1; transform:translateY(0);}
-  to {opacity:0; transform:translateY(-60px);}
+@keyframes fly{
+  from{opacity:1;transform:translateY(0)}
+  to{opacity:0;transform:translateY(-60px)}
 }
 </style>
 </head>
 <body>
 
-<h1>🐀 RATATOK</h1>
-
-<div class="card">
-  <p>💰 Монеты: <span id="coins">0</span></p>
-  <p>⚡ Энергия: <span id="energy">0</span>/<span id="maxEnergy">0</span></p>
-  <p>👆 Тап: +<span id="tapPower">1</span></p>
-  <p>🤖 Автодоход: <span id="autoIncome">0</span>/сек</p>
-  <p>⭐ Уровень: <span id="level">1</span> (<span id="xp">0</span>/<span id="xpNeed">100</span>)</p>
+<div class="header">
+  <div id="levelText"></div>
+  <div id="langText"></div>
 </div>
 
-<button id="tapBtn">🐀</button>
+<div id="rat">🐭</div>
 
 <div class="card">
-  <h3>🛒 Магазин</h3>
+  <p id="coinsText"></p>
+  <p id="energyText"></p>
+  <p id="tapText"></p>
+  <p id="autoText"></p>
+</div>
+
+<button id="tapBtn">TAP</button>
+
+<div class="card shop">
+  <h3 id="shopTitle"></h3>
   <button id="upTap"></button>
   <button id="upAuto"></button>
   <button id="upEnergy"></button>
 </div>
 
 <script>
-// ====== НАСТРОЙКИ ======
-let coins = +localStorage.getItem("coins") || 0;
-let tapPower = +localStorage.getItem("tapPower") || 1;
-let autoIncome = +localStorage.getItem("autoIncome") || 0;
-let energy = +localStorage.getItem("energy") || 100;
-let maxEnergy = +localStorage.getItem("maxEnergy") || 100;
-let level = +localStorage.getItem("level") || 1;
-let xp = +localStorage.getItem("xp") || 0;
-let lastTime = +localStorage.getItem("lastTime") || Date.now();
-
-let tapPrice = +localStorage.getItem("tapPrice") || 10;
-let autoPrice = +localStorage.getItem("autoPrice") || 25;
-let energyPrice = +localStorage.getItem("energyPrice") || 50;
-
-// ====== ОФФЛАЙН ДОХОД ======
-let diff = Math.floor((Date.now() - lastTime) / 1000);
-if (diff > 0) coins += diff * autoIncome;
-
-// ====== ЭЛЕМЕНТЫ ======
-const el = id => document.getElementById(id);
-
-// ====== UI ======
-function xpNeed() { return level * 100; }
-
-function updateUI() {
-  el("coins").textContent = coins;
-  el("energy").textContent = energy;
-  el("maxEnergy").textContent = maxEnergy;
-  el("tapPower").textContent = tapPower;
-  el("autoIncome").textContent = autoIncome;
-  el("level").textContent = level;
-  el("xp").textContent = xp;
-  el("xpNeed").textContent = xpNeed();
-  el("upTap").textContent = `➕ Тап (${tapPrice})`;
-  el("upAuto").textContent = `🤖 Авто (${autoPrice})`;
-  el("upEnergy").textContent = `⚡ Энергия (${energyPrice})`;
-}
-updateUI();
-
-// ====== СОХРАНЕНИЕ ======
-function save() {
-  localStorage.setItem("coins", coins);
-  localStorage.setItem("tapPower", tapPower);
-  localStorage.setItem("autoIncome", autoIncome);
-  localStorage.setItem("energy", energy);
-  localStorage.setItem("maxEnergy", maxEnergy);
-  localStorage.setItem("level", level);
-  localStorage.setItem("xp", xp);
-  localStorage.setItem("tapPrice", tapPrice);
-  localStorage.setItem("autoPrice", autoPrice);
-  localStorage.setItem("energyPrice", energyPrice);
-  localStorage.setItem("lastTime", Date.now());
-}
-
-// ====== ТАП ======
-el("tapBtn").onclick = () => {
-  if (energy <= 0) return;
-  energy--;
-  coins += tapPower;
-  xp += tapPower;
-
-  if (xp >= xpNeed()) {
-    xp = 0;
-    level++;
+// ===== LANGUAGE =====
+const tgLang = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code || "en";
+const L = {
+  en:{
+    level:l=>`⭐ Level ${l}`,
+    coins:c=>`💰 Coins: ${c}`,
+    energy:(e,m)=>`⚡ Energy: ${e}/${m}`,
+    tap:t=>`👆 Tap: +${t}`,
+    auto:a=>`🤖 Auto: ${a}/sec`,
+    shop:"🛒 Shop",
+    upTap:p=>`➕ Tap power (${p})`,
+    upAuto:p=>`🤖 Auto income (${p})`,
+    upEnergy:p=>`⚡ Max energy (${p})`
+  },
+  ru:{
+    level:l=>`⭐ Уровень ${l}`,
+    coins:c=>`💰 Монеты: ${c}`,
+    energy:(e,m)=>`⚡ Энергия: ${e}/${m}`,
+    tap:t=>`👆 Тап: +${t}`,
+    auto:a=>`🤖 Автодоход: ${a}/сек`,
+    shop:"🛒 Магазин",
+    upTap:p=>`➕ Сила тапа (${p})`,
+    upAuto:p=>`🤖 Автодоход (${p})`,
+    upEnergy:p=>`⚡ Макс. энергия (${p})`
   }
+};
+const T = L[tgLang.startsWith("ru")?"ru":"en"];
 
-  save();
-  updateUI();
+// ===== RATS BY LEVEL =====
+const rats=[
+  {lvl:1,emoji:"🐭"},
+  {lvl:5,emoji:"🐀"},
+  {lvl:10,emoji:"🐁"},
+  {lvl:20,emoji:"🐹"},
+  {lvl:50,emoji:"👑🐀"}
+];
 
-  const plus = document.createElement("div");
-  plus.className = "plus";
-  plus.textContent = "+" + tapPower;
-  const r = el("tapBtn").getBoundingClientRect();
-  plus.style.left = r.left + r.width/2 + "px";
-  plus.style.top = r.top + "px";
-  document.body.appendChild(plus);
-  setTimeout(() => plus.remove(), 1000);
+// ===== LOAD =====
+let coins=+localStorage.getItem("coins")||0;
+let tap=+localStorage.getItem("tap")||1;
+let auto=+localStorage.getItem("auto")||0;
+let energy=+localStorage.getItem("energy")||100;
+let maxEnergy=+localStorage.getItem("maxEnergy")||100;
+let level=+localStorage.getItem("level")||1;
+let xp=+localStorage.getItem("xp")||0;
+
+let pTap=+localStorage.getItem("pTap")||10;
+let pAuto=+localStorage.getItem("pAuto")||25;
+let pEnergy=+localStorage.getItem("pEnergy")||50;
+
+// ===== UI =====
+const $=id=>document.getElementById(id);
+function xpNeed(){return level*100}
+function currentRat(){
+  return rats.filter(r=>level>=r.lvl).slice(-1)[0].emoji;
+}
+function update(){
+  $("rat").textContent=currentRat();
+  $("levelText").textContent=T.level(level);
+  $("coinsText").textContent=T.coins(coins);
+  $("energyText").textContent=T.energy(energy,maxEnergy);
+  $("tapText").textContent=T.tap(tap);
+  $("autoText").textContent=T.auto(auto);
+  $("shopTitle").textContent=T.shop;
+  $("upTap").textContent=T.upTap(pTap);
+  $("upAuto").textContent=T.upAuto(pAuto);
+  $("upEnergy").textContent=T.upEnergy(pEnergy);
+}
+update();
+
+// ===== SAVE =====
+function save(){
+  localStorage.setItem("coins",coins);
+  localStorage.setItem("tap",tap);
+  localStorage.setItem("auto",auto);
+  localStorage.setItem("energy",energy);
+  localStorage.setItem("maxEnergy",maxEnergy);
+  localStorage.setItem("level",level);
+  localStorage.setItem("xp",xp);
+  localStorage.setItem("pTap",pTap);
+  localStorage.setItem("pAuto",pAuto);
+  localStorage.setItem("pEnergy",pEnergy);
+}
+
+// ===== TAP =====
+$("tapBtn").onclick=()=>{
+  if(energy<=0)return;
+  energy--;
+  coins+=tap;
+  xp+=tap;
+  if(xp>=xpNeed()){xp=0;level++}
+  save();update();
 };
 
-// ====== МАГАЗИН ======
-el("upTap").onclick = () => {
-  if (coins < tapPrice) return;
-  coins -= tapPrice;
-  tapPower++;
-  tapPrice = Math.floor(tapPrice * 1.6);
-  save(); updateUI();
+// ===== SHOP =====
+$("upTap").onclick=()=>{
+  if(coins<pTap)return;
+  coins-=pTap;tap++;pTap=Math.floor(pTap*1.6);
+  save();update();
+};
+$("upAuto").onclick=()=>{
+  if(coins<pAuto)return;
+  coins-=pAuto;auto++;pAuto=Math.floor(pAuto*1.7);
+  save();update();
+};
+$("upEnergy").onclick=()=>{
+  if(coins<pEnergy)return;
+  coins-=pEnergy;maxEnergy+=10;pEnergy=Math.floor(pEnergy*1.8);
+  save();update();
 };
 
-el("upAuto").onclick = () => {
-  if (coins < autoPrice) return;
-  coins -= autoPrice;
-  autoIncome++;
-  autoPrice = Math.floor(autoPrice * 1.7);
-  save(); updateUI();
-};
-
-el("upEnergy").onclick = () => {
-  if (coins < energyPrice) return;
-  coins -= energyPrice;
-  maxEnergy += 10;
-  energyPrice = Math.floor(energyPrice * 1.8);
-  save(); updateUI();
-};
-
-// ====== ТАЙМЕРЫ ======
-setInterval(() => {
-  if (energy < maxEnergy) energy++;
-  save(); updateUI();
-}, 2000);
-
-setInterval(() => {
-  coins += autoIncome;
-  save(); updateUI();
-}, 1000);
+// ===== TIMERS =====
+setInterval(()=>{ if(energy<maxEnergy){energy++;save();update()} },2000);
+setInterval(()=>{ if(auto>0){coins+=auto;save();update()} },1000);
 </script>
 
 </body>
