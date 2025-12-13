@@ -27,19 +27,48 @@
 
   <button onclick="tap()">🐀</button>
 
-  <script>
-    let coins = localStorage.getItem("ratatok_coins");
-    coins = coins ? parseInt(coins) : 0;
+ <script>
+  // ====== МОНЕТЫ ======
+  let coins = localStorage.getItem("ratatok_coins");
+  coins = coins ? parseInt(coins) : 0;
 
-    const coinsEl = document.getElementById("coins");
+  // ====== ЭНЕРГИЯ ======
+  let energy = localStorage.getItem("ratatok_energy");
+  energy = energy ? parseInt(energy) : 100;
+
+  const coinsEl = document.getElementById("coins");
+  const energyEl = document.getElementById("energy");
+
+  coinsEl.textContent = coins;
+  energyEl.textContent = energy;
+
+  function tap() {
+    if (energy <= 0) return;
+
+    coins += tapPower;
+    energy--;
+
     coinsEl.textContent = coins;
+    energyEl.textContent = energy;
 
-    function tap() {
-      coins++;
-      coinsEl.textContent = coins;
-      localStorage.setItem("ratatok_coins", coins);
+    localStorage.setItem("ratatok_coins", coins);
+    localStorage.setItem("ratatok_energy", energy);
+  }
+
+  // ====== ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ======
+  setInterval(() => {
+    if (energy < maxEnergy) {
+      energy++;
+      energyEl.textContent = energy;
+      localStorage.setItem("ratatok_energy", energy);
     }
-  </script>
+  }, 2000); // каждые 2 секунды
+
+  // ====== ПАРАМЕТРЫ ИГРЫ ======
+  let tapPower = 1;
+  let maxEnergy = 100;
+</script>
+
 
 </body>
 </html>
