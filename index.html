@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <title>RATATOK</title>
@@ -9,6 +9,7 @@
       color: white;
       text-align: center;
       font-family: Arial;
+      margin-top: 60px;
     }
     button {
       font-size: 40px;
@@ -27,10 +28,16 @@
   <button onclick="tap()">🐀</button>
 
   <script>
-    let coins = 0;
+    let coins = localStorage.getItem("ratatok_coins");
+    coins = coins ? parseInt(coins) : 0;
+
+    const coinsEl = document.getElementById("coins");
+    coinsEl.textContent = coins;
+
     function tap() {
       coins++;
-      document.getElementById("coins").innerText = coins;
+      coinsEl.textContent = coins;
+      localStorage.setItem("ratatok_coins", coins);
     }
   </script>
 
