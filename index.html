@@ -6,51 +6,48 @@
 
 <style>
 body {
-  background: #0f0f0f;
-  color: white;
-  font-family: Arial, sans-serif;
-  margin: 0;
+  background:#0e0e0e;
+  color:white;
+  font-family:Arial;
+  margin:0;
 }
 
 .screen {
-  display: none;
-  text-align: center;
-  padding-top: 40px;
+  display:none;
+  text-align:center;
+  padding-top:40px;
 }
 
-.active {
-  display: block;
-}
+.active { display:block; }
 
 #rat {
-  width: 160px;
-  height: 160px;
-  background: gold;
-  border-radius: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 80px;
-  margin: 20px auto;
-  user-select: none;
+  width:170px;
+  height:170px;
+  background:gold;
+  border-radius:30px;
+  font-size:90px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:20px auto;
+  user-select:none;
 }
 
-/* Нижнее меню */
 .menu {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: #1a1a1a;
-  display: flex;
-  justify-content: space-around;
-  padding: 12px 0;
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#1a1a1a;
+  display:flex;
+  justify-content:space-around;
+  padding:12px 0;
 }
 
 .menu button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 16px;
+  background:none;
+  border:none;
+  color:white;
+  font-size:16px;
 }
 </style>
 </head>
@@ -59,27 +56,27 @@ body {
 
 <!-- 🐀 ИГРА -->
 <div id="game" class="screen active">
-  <h1>🐀 RATATOK</h1>
-  <div>Монеты: <span id="coins">0</span></div>
+  <h1 id="ratName">🐀 RAT</h1>
+  <p>Уровень: <span id="level">1</span></p>
+  <p>Монеты: <span id="coins">0</span></p>
   <div id="rat">🐀</div>
 </div>
 
 <!-- 👥 РЕФЕРАЛЫ -->
 <div id="refs" class="screen">
   <h1>👥 Рефералы</h1>
-  <p>Пригласи друзей и получай бонусы</p>
-  <p><b>Твоя ссылка:</b></p>
+  <p>Приглашай друзей и получай бонусы</p>
   <p id="refLink"></p>
 </div>
 
 <!-- 🛒 МАГАЗИН -->
 <div id="shop" class="screen">
   <h1>🛒 Магазин</h1>
-  <button onclick="buy()">+1 к тапу (100 монет)</button>
+  <button onclick="upgrade()">+1 к тапу (100)</button>
   <p id="shopInfo"></p>
 </div>
 
-<!-- 🔽 НИЖНЕЕ МЕНЮ -->
+<!-- МЕНЮ -->
 <div class="menu">
   <button onclick="openScreen('game')">🐀 Игра</button>
   <button onclick="openScreen('refs')">👥 Рефы</button>
@@ -87,51 +84,68 @@ body {
 </div>
 
 <script>
-let coins = parseInt(localStorage.getItem("coins")) || 0;
-let tapPower = parseInt(localStorage.getItem("tapPower")) || 1;
-let lastTap = 0;
+let coins = Number(localStorage.getItem("coins")) || 0;
+let tapPower = Number(localStorage.getItem("tapPower")) || 1;
 
 const coinsEl = document.getElementById("coins");
-const rat = document.getElementById("rat");
+const levelEl = document.getElementById("level");
+const ratEl = document.getElementById("rat");
+const ratName = document.getElementById("ratName");
 
 coinsEl.textContent = coins;
 
-// 🐀 ТАП
-rat.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  const now = Date.now();
-  if (now - lastTap < 150) return;
-  lastTap = now;
+// 🐀 УРОВНИ
+function getLevel(c) {
+  if (c >= 5000) return {lvl:5, rat:"🐉", name:"DRAGON RAT"};
+  if (c >= 1500) return {lvl:4, rat:"🐿", name:"LEGEND RAT"};
+  if (c >= 500)  return {lvl:3, rat:"🐹", name:"GOLD RAT"};
+  if (c >= 100)  return {lvl:2, rat:"🐁", name:"FAST RAT"};
+  return {lvl:1, rat:"🐀", name:"START RAT"};
+}
 
+function updateLevel() {
+  const data = getLevel(coins);
+  levelEl.textContent = data.lvl;
+  ratEl.textContent = data.rat;
+  ratName.textContent = data.rat + " " + data.name;
+}
+
+// 🐀 ТАП
+ratEl.addEventListener("touchstart", (e)=>{
+  e.preventDefault();
   coins += tapPower;
   coinsEl.textContent = coins;
   localStorage.setItem("coins", coins);
+  updateLevel();
 });
 
-// 🔁 ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
-function openScreen(name) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.getElementById(name).classList.add("active");
-}
-
-// 👥 РЕФЕРАЛКА
-const userId = Math.floor(Math.random() * 1000000);
-const refLink = `https://t.me/Ratatok_bot?start=${userId}`;
-document.getElementById("refLink").textContent = refLink;
-
 // 🛒 МАГАЗИН
-function buy() {
+function upgrade() {
   if (coins >= 100) {
     coins -= 100;
     tapPower++;
-    coinsEl.textContent = coins;
-    document.getElementById("shopInfo").textContent = "Улучшено!";
     localStorage.setItem("coins", coins);
     localStorage.setItem("tapPower", tapPower);
+    coinsEl.textContent = coins;
+    document.getElementById("shopInfo").textContent = "Улучшено!";
+    updateLevel();
   } else {
     document.getElementById("shopInfo").textContent = "Не хватает монет";
   }
 }
+
+// 🔁 ЭКРАНЫ
+function openScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// 👥 РЕФЕРАЛ
+const uid = Math.floor(Math.random()*999999);
+document.getElementById("refLink").textContent =
+"https://t.me/Ratatok_bot?start=" + uid;
+
+updateLevel();
 </script>
 
 </body>
