@@ -2,150 +2,150 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RATATOK</title>
 
 <style>
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
 body {
-  background:#0e0e0e;
-  color:white;
-  font-family:Arial;
-  margin:0;
+    margin: 0;
+    background: #0e0e0e;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
-.screen {
-  display:none;
-  text-align:center;
-  padding-top:40px;
+/* HEADER */
+.header {
+    text-align: center;
+    padding: 20px;
 }
 
-.active { display:block; }
-
-#rat {
-  width:170px;
-  height:170px;
-  background:gold;
-  border-radius:30px;
-  font-size:90px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:20px auto;
-  user-select:none;
+.header h1 {
+    margin: 0;
+    font-size: 28px;
 }
 
+.stats {
+    margin-top: 10px;
+    font-size: 18px;
+}
+
+/* GAME */
+.game {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.tap-btn {
+    width: 220px;
+    height: 220px;
+    border-radius: 40px;
+    background: #ffd400;
+    border: none;
+    font-size: 120px;
+    cursor: pointer;
+    transition: transform 0.05s;
+}
+
+.tap-btn:active {
+    transform: scale(0.93);
+}
+
+/* MENU */
 .menu {
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:#1a1a1a;
-  display:flex;
-  justify-content:space-around;
-  padding:12px 0;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0;
+    background: #161616;
+    border-top: 1px solid #222;
 }
 
 .menu button {
-  background:none;
-  border:none;
-  color:white;
-  font-size:16px;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.menu button.active {
+    color: #ffd400;
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🐀 ИГРА -->
-<div id="game" class="screen active">
-  <h1 id="ratName">🐀 RAT</h1>
-  <p>Уровень: <span id="level">1</span></p>
-  <p>Монеты: <span id="coins">0</span></p>
-  <div id="rat">🐀</div>
+<div class="header">
+    <h1 id="ratName">🐀 FAST RAT</h1>
+    <div class="stats">
+        Уровень: <span id="level">1</span><br>
+        Монеты: <span id="coins">0</span>
+    </div>
 </div>
 
-<!-- 👥 РЕФЕРАЛЫ -->
-<div id="refs" class="screen">
-  <h1>👥 Рефералы</h1>
-  <p>Приглашай друзей и получай бонусы</p>
-  <p id="refLink"></p>
+<div class="game">
+    <button class="tap-btn" onclick="tap()">🐀</button>
 </div>
 
-<!-- 🛒 МАГАЗИН -->
-<div id="shop" class="screen">
-  <h1>🛒 Магазин</h1>
-  <button onclick="upgrade()">+1 к тапу (100)</button>
-  <p id="shopInfo"></p>
-</div>
-
-<!-- МЕНЮ -->
 <div class="menu">
-  <button onclick="openScreen('game')">🐀 Игра</button>
-  <button onclick="openScreen('refs')">👥 Рефы</button>
-  <button onclick="openScreen('shop')">🛒 Магазин</button>
+    <button class="active" onclick="switchTab('game')">🐀 Игра</button>
+    <button onclick="switchTab('refs')">👥 Рефы</button>
+    <button onclick="switchTab('shop')">🛒 Магазин</button>
 </div>
 
 <script>
-let coins = Number(localStorage.getItem("coins")) || 0;
-let tapPower = Number(localStorage.getItem("tapPower")) || 1;
+let coins = parseInt(localStorage.getItem("coins")) || 0;
+let level = parseInt(localStorage.getItem("level")) || 1;
 
-const coinsEl = document.getElementById("coins");
-const levelEl = document.getElementById("level");
-const ratEl = document.getElementById("rat");
-const ratName = document.getElementById("ratName");
+const rats = [
+    { name: "FAST RAT", icon: "🐀" },
+    { name: "SMART RAT", icon: "🐁" },
+    { name: "GOLD RAT", icon: "🐭" },
+    { name: "KING RAT", icon: "👑🐀" }
+];
 
-coinsEl.textContent = coins;
+updateUI();
 
-// 🐀 УРОВНИ
-function getLevel(c) {
-  if (c >= 5000) return {lvl:5, rat:"🐉", name:"DRAGON RAT"};
-  if (c >= 1500) return {lvl:4, rat:"🐿", name:"LEGEND RAT"};
-  if (c >= 500)  return {lvl:3, rat:"🐹", name:"GOLD RAT"};
-  if (c >= 100)  return {lvl:2, rat:"🐁", name:"FAST RAT"};
-  return {lvl:1, rat:"🐀", name:"START RAT"};
+function tap() {
+    coins += level;
+    checkLevel();
+    save();
+    updateUI();
 }
 
-function updateLevel() {
-  const data = getLevel(coins);
-  levelEl.textContent = data.lvl;
-  ratEl.textContent = data.rat;
-  ratName.textContent = data.rat + " " + data.name;
+function checkLevel() {
+    const need = level * 200;
+    if (coins >= need) {
+        level++;
+    }
 }
 
-// 🐀 ТАП
-ratEl.addEventListener("touchstart", (e)=>{
-  e.preventDefault();
-  coins += tapPower;
-  coinsEl.textContent = coins;
-  localStorage.setItem("coins", coins);
-  updateLevel();
-});
+function updateUI() {
+    document.getElementById("coins").innerText = coins;
+    document.getElementById("level").innerText = level;
 
-// 🛒 МАГАЗИН
-function upgrade() {
-  if (coins >= 100) {
-    coins -= 100;
-    tapPower++;
+    const rat = rats[Math.min(level - 1, rats.length - 1)];
+    document.getElementById("ratName").innerText = rat.icon + " " + rat.name;
+    document.querySelector(".tap-btn").innerText = rat.icon;
+}
+
+function save() {
     localStorage.setItem("coins", coins);
-    localStorage.setItem("tapPower", tapPower);
-    coinsEl.textContent = coins;
-    document.getElementById("shopInfo").textContent = "Улучшено!";
-    updateLevel();
-  } else {
-    document.getElementById("shopInfo").textContent = "Не хватает монет";
-  }
+    localStorage.setItem("level", level);
 }
 
-// 🔁 ЭКРАНЫ
-function openScreen(id){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+function switchTab(tab) {
+    alert("Раздел «" + tab + "» скоро будет 🚀");
 }
-
-// 👥 РЕФЕРАЛ
-const uid = Math.floor(Math.random()*999999);
-document.getElementById("refLink").textContent =
-"https://t.me/Ratatok_bot?start=" + uid;
-
-updateLevel();
 </script>
 
 </body>
