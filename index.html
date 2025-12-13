@@ -17,18 +17,14 @@ body{background:#000;color:#fff;height:100vh;overflow:hidden}
 .stats{margin-top:6px;font-size:16px;opacity:.9}
 
 /* SECTIONS */
-.section{display:none;height:calc(100vh - 180px)}
+.section{display:none;height:calc(100vh - 190px)}
 .section.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
 
 /* TAP */
 #tapArea{
-width:280px;
-height:280px;
-background:#ffd400;
-border-radius:48px;
-display:flex;
-align-items:center;
-justify-content:center;
+width:280px;height:280px;
+background:#ffd400;border-radius:48px;
+display:flex;align-items:center;justify-content:center;
 box-shadow:0 0 60px rgba(255,212,0,.4)
 }
 #tapArea:active{filter:brightness(1.04)}
@@ -39,48 +35,32 @@ box-shadow:0 0 60px rgba(255,212,0,.4)
 
 /* BUTTONS */
 .big-btn{
-margin-top:16px;
-padding:16px 26px;
-border:none;
-border-radius:18px;
-background:#ffd400;
-font-size:18px;
-font-weight:600;
+margin-top:16px;padding:16px 26px;
+border:none;border-radius:18px;
+background:#ffd400;font-size:18px;font-weight:600
 }
 
 /* MENU */
 .menu{
-position:fixed;
-bottom:0;
-width:100%;
+position:fixed;bottom:0;width:100%;
 background:#0e0e0e;
-display:flex;
-justify-content:space-around;
-padding:14px 0;
-border-top:1px solid #222
+display:flex;justify-content:space-around;
+padding:14px 0;border-top:1px solid #222
 }
 .menu button{
-background:none;
-border:none;
-color:#777;
-font-size:22px;
-padding:14px 24px;
-border-radius:18px
+background:none;border:none;
+color:#777;font-size:22px;
+padding:14px 24px;border-radius:18px
 }
 .menu button.active{
-background:#1a1a1a;
-color:#ffd400
+background:#1a1a1a;color:#ffd400
 }
 
 /* LANGUAGE */
 .lang{
-position:fixed;
-top:14px;
-right:14px;
-background:#1a1a1a;
-padding:8px 12px;
-border-radius:14px;
-font-size:14px
+position:fixed;top:14px;right:14px;
+background:#1a1a1a;padding:8px 12px;
+border-radius:14px;font-size:14px
 }
 </style>
 </head>
@@ -90,10 +70,10 @@ font-size:14px
 <div class="lang" onclick="toggleLang()">🌍 <span id="lang">RU</span></div>
 
 <div class="header">
-<h1 id="ratName">🐀 BASIC RAT</h1>
+<h1 id="ratName">🐀 RATATOK</h1>
 <div class="stats">
 <span id="lvlTxt">Уровень</span>: <span id="level">1</span> |
-<span id="coinTxt">Монеты</span>: <span id="coins">0</span>
+<span id="coinTxt">Очки</span>: <span id="coins">0</span>
 </div>
 </div>
 
@@ -102,40 +82,43 @@ font-size:14px
 <div id="tapArea"><img id="ratImg"></div>
 </div>
 
-<!-- REF -->
-<div class="section" id="ref">
-<div class="content">
-<h2 id="refTitle">👥 Рефералы</h2>
-<p id="refDesc">Приглашай друзей и получай бонусы</p>
-<p style="margin-top:10px;color:#ffd400;word-break:break-all">
-t.me/your_bot?start=RAT123
-</p>
-</div>
-</div>
-
 <!-- SHOP -->
 <div class="section" id="shop">
 <div class="content">
-<h2 id="shopTitle">🛒 Магазин</h2>
-<p id="shopDesc">Усиление тапа</p>
-<button class="big-btn" onclick="buyBoost()">+1 TAP (100)</button>
-<p style="margin-top:12px;opacity:.6">TON — скоро</p>
+<h2>🛒 Магазин</h2>
+<p>+1 очко за тап</p>
+<button class="big-btn" onclick="buyBoost()">Купить (100)</button>
+<p style="opacity:.6;margin-top:10px">TON — скоро</p>
+</div>
+</div>
+
+<!-- REF -->
+<div class="section" id="ref">
+<div class="content">
+<h2>👥 Рефералы</h2>
+<p>Приглашай друзей</p>
+<p style="margin-top:10px;color:#ffd400;word-break:break-all">
+t.me/your_bot?start=RATATOK
+</p>
 </div>
 </div>
 
 <!-- AIRDROP -->
 <div class="section" id="air">
 <div class="content">
-<h2>🎁 Airdrop</h2>
-<p>Подготовка к раздаче токенов</p>
-<p style="opacity:.6;margin-top:10px">Будет доступно после запуска сервера</p>
+<h2>🎁 AIRDROP RATATOK</h2>
+<p>Твои airdrop points:</p>
+<h1 id="air">0</h1>
+<p style="opacity:.7;margin-top:10px">
+Очки → RATATOK после снапшота
+</p>
 </div>
 </div>
 
 <div class="menu">
 <button class="active" onclick="openTab('game',this)">🐀</button>
-<button onclick="openTab('ref',this)">👥</button>
 <button onclick="openTab('shop',this)">🛒</button>
+<button onclick="openTab('ref',this)">👥</button>
 <button onclick="openTab('air',this)">🎁</button>
 </div>
 
@@ -145,45 +128,54 @@ Telegram.WebApp.expand();
 
 /* DATA */
 const rats=[
-{n:{ru:"BASIC RAT",en:"BASIC RAT"},i:"https://em-content.zobj.net/source/apple/354/rat_1f400.png"},
-{n:{ru:"FAST RAT",en:"FAST RAT"},i:"https://em-content.zobj.net/source/apple/354/mouse_1f401.png"},
-{n:{ru:"GOLD RAT",en:"GOLD RAT"},i:"https://em-content.zobj.net/source/apple/354/hamster_1f439.png"}
+{n:"RATATOK",i:"https://em-content.zobj.net/source/apple/354/rat_1f400.png"},
+{n:"FAST RATATOK",i:"https://em-content.zobj.net/source/apple/354/mouse_1f401.png"},
+{n:"GOLD RATATOK",i:"https://em-content.zobj.net/source/apple/354/hamster_1f439.png"}
 ];
 
 let coins=+localStorage.getItem("coins")||0;
 let level=+localStorage.getItem("level")||1;
 let power=+localStorage.getItem("power")||1;
+let air=+localStorage.getItem("air")||0;
 let lang=localStorage.getItem("lang")||"ru";
 let lastTap=0;
 
-/* UI */
-const coinsEl=coinsTxt= document.getElementById("coins");
+/* ELEMENTS */
+const coinsEl=document.getElementById("coins");
 const levelEl=document.getElementById("level");
+const airEl=document.getElementById("air");
 const ratImg=document.getElementById("ratImg");
 const ratName=document.getElementById("ratName");
 
 function updateRat(){
 let i=Math.min(rats.length-1,Math.floor((level-1)/2));
 ratImg.src=rats[i].i;
-ratName.innerHTML="🐀 "+rats[i].n[lang];
+ratName.textContent="🐀 "+rats[i].n;
 }
+
 function save(){
 localStorage.setItem("coins",coins);
 localStorage.setItem("level",level);
 localStorage.setItem("power",power);
+localStorage.setItem("air",air);
 }
 
 /* TAP + ANTICHEAT */
 tapArea.onclick=()=>{
 let now=Date.now();
-if(now-lastTap<120) return;
+if(now-lastTap<120)return;
 lastTap=now;
 
 coins+=power;
+air+=power;
+
 if(coins%50===0){level++;updateRat()}
 save();
+
 coinsEl.textContent=coins;
 levelEl.textContent=level;
+airEl.textContent=air;
+
 Telegram.WebApp.HapticFeedback.impactOccurred("light");
 };
 
@@ -195,7 +187,7 @@ power++;
 save();
 coinsEl.textContent=coins;
 alert("Усиление куплено");
-}else alert("Не хватает монет");
+}else alert("Не хватает очков");
 }
 
 /* MENU */
@@ -212,19 +204,15 @@ lang=lang==="ru"?"en":"ru";
 localStorage.setItem("lang",lang);
 document.getElementById("lang").textContent=lang.toUpperCase();
 document.getElementById("lvlTxt").textContent=lang==="ru"?"Уровень":"Level";
-document.getElementById("coinTxt").textContent=lang==="ru"?"Монеты":"Coins";
-document.getElementById("refTitle").textContent=lang==="ru"?"👥 Рефералы":"👥 Referrals";
-document.getElementById("refDesc").textContent=lang==="ru"?"Приглашай друзей":"Invite friends";
-document.getElementById("shopTitle").textContent=lang==="ru"?"🛒 Магазин":"🛒 Shop";
-document.getElementById("shopDesc").textContent=lang==="ru"?"Усиление тапа":"Tap boost";
-updateRat();
+document.getElementById("coinTxt").textContent=lang==="ru"?"Очки":"Points";
 }
 
 /* INIT */
 coinsEl.textContent=coins;
 levelEl.textContent=level;
-updateRat();
+airEl.textContent=air;
 document.getElementById("lang").textContent=lang.toUpperCase();
+updateRat();
 </script>
 
 </body>
