@@ -1,202 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
 <title>RATATOK</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body{
-  background:#0e0e0e;
-  color:#fff;
-  font-family:Arial;
-  margin:0;
-  padding:16px;
-  text-align:center;
+body {
+  background: #0f0f0f;
+  color: white;
+  font-family: Arial, sans-serif;
+  margin: 0;
 }
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+
+.screen {
+  display: none;
+  text-align: center;
+  padding-top: 40px;
 }
-.card{
-  background:#1b1b1b;
-  border-radius:18px;
-  padding:14px;
-  margin:10px 0;
+
+.active {
+  display: block;
 }
-#rat{
-  font-size:64px;
-  margin:10px 0;
+
+#rat {
+  width: 160px;
+  height: 160px;
+  background: gold;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  margin: 20px auto;
+  user-select: none;
 }
-#tapBtn{
-  font-size:42px;
-  padding:30px;
-  border-radius:22px;
-  border:none;
-  background:gold;
+
+/* Нижнее меню */
+.menu {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #1a1a1a;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 0;
 }
-.shop button{
-  width:100%;
-  margin:6px 0;
-  padding:14px;
-  border-radius:14px;
-  border:none;
-  background:#333;
-  color:white;
-}
-.plus{
-  position:absolute;
-  color:gold;
-  font-size:24px;
-  animation:fly 1s ease-out forwards;
-  pointer-events:none;
-}
-@keyframes fly{
-  from{opacity:1;transform:translateY(0)}
-  to{opacity:0;transform:translateY(-60px)}
+
+.menu button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
 }
 </style>
 </head>
+
 <body>
 
-<div class="header">
-  <div id="levelText"></div>
-  <div id="langText"></div>
+<!-- 🐀 ИГРА -->
+<div id="game" class="screen active">
+  <h1>🐀 RATATOK</h1>
+  <div>Монеты: <span id="coins">0</span></div>
+  <div id="rat">🐀</div>
 </div>
 
-<div id="rat">🐭</div>
-
-<div class="card">
-  <p id="coinsText"></p>
-  <p id="energyText"></p>
-  <p id="tapText"></p>
-  <p id="autoText"></p>
+<!-- 👥 РЕФЕРАЛЫ -->
+<div id="refs" class="screen">
+  <h1>👥 Рефералы</h1>
+  <p>Пригласи друзей и получай бонусы</p>
+  <p><b>Твоя ссылка:</b></p>
+  <p id="refLink"></p>
 </div>
 
-<button id="tapBtn">TAP</button>
+<!-- 🛒 МАГАЗИН -->
+<div id="shop" class="screen">
+  <h1>🛒 Магазин</h1>
+  <button onclick="buy()">+1 к тапу (100 монет)</button>
+  <p id="shopInfo"></p>
+</div>
 
-<div class="card shop">
-  <h3 id="shopTitle"></h3>
-  <button id="upTap"></button>
-  <button id="upAuto"></button>
-  <button id="upEnergy"></button>
+<!-- 🔽 НИЖНЕЕ МЕНЮ -->
+<div class="menu">
+  <button onclick="openScreen('game')">🐀 Игра</button>
+  <button onclick="openScreen('refs')">👥 Рефы</button>
+  <button onclick="openScreen('shop')">🛒 Магазин</button>
 </div>
 
 <script>
-// ===== LANGUAGE =====
-const tgLang = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code || "en";
-const L = {
-  en:{
-    level:l=>`⭐ Level ${l}`,
-    coins:c=>`💰 Coins: ${c}`,
-    energy:(e,m)=>`⚡ Energy: ${e}/${m}`,
-    tap:t=>`👆 Tap: +${t}`,
-    auto:a=>`🤖 Auto: ${a}/sec`,
-    shop:"🛒 Shop",
-    upTap:p=>`➕ Tap power (${p})`,
-    upAuto:p=>`🤖 Auto income (${p})`,
-    upEnergy:p=>`⚡ Max energy (${p})`
-  },
-  ru:{
-    level:l=>`⭐ Уровень ${l}`,
-    coins:c=>`💰 Монеты: ${c}`,
-    energy:(e,m)=>`⚡ Энергия: ${e}/${m}`,
-    tap:t=>`👆 Тап: +${t}`,
-    auto:a=>`🤖 Автодоход: ${a}/сек`,
-    shop:"🛒 Магазин",
-    upTap:p=>`➕ Сила тапа (${p})`,
-    upAuto:p=>`🤖 Автодоход (${p})`,
-    upEnergy:p=>`⚡ Макс. энергия (${p})`
+let coins = parseInt(localStorage.getItem("coins")) || 0;
+let tapPower = parseInt(localStorage.getItem("tapPower")) || 1;
+let lastTap = 0;
+
+const coinsEl = document.getElementById("coins");
+const rat = document.getElementById("rat");
+
+coinsEl.textContent = coins;
+
+// 🐀 ТАП
+rat.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  const now = Date.now();
+  if (now - lastTap < 150) return;
+  lastTap = now;
+
+  coins += tapPower;
+  coinsEl.textContent = coins;
+  localStorage.setItem("coins", coins);
+});
+
+// 🔁 ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
+function openScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(name).classList.add("active");
+}
+
+// 👥 РЕФЕРАЛКА
+const userId = Math.floor(Math.random() * 1000000);
+const refLink = `https://t.me/Ratatok_bot?start=${userId}`;
+document.getElementById("refLink").textContent = refLink;
+
+// 🛒 МАГАЗИН
+function buy() {
+  if (coins >= 100) {
+    coins -= 100;
+    tapPower++;
+    coinsEl.textContent = coins;
+    document.getElementById("shopInfo").textContent = "Улучшено!";
+    localStorage.setItem("coins", coins);
+    localStorage.setItem("tapPower", tapPower);
+  } else {
+    document.getElementById("shopInfo").textContent = "Не хватает монет";
   }
-};
-const T = L[tgLang.startsWith("ru")?"ru":"en"];
-
-// ===== RATS BY LEVEL =====
-const rats=[
-  {lvl:1,emoji:"🐭"},
-  {lvl:5,emoji:"🐀"},
-  {lvl:10,emoji:"🐁"},
-  {lvl:20,emoji:"🐹"},
-  {lvl:50,emoji:"👑🐀"}
-];
-
-// ===== LOAD =====
-let coins=+localStorage.getItem("coins")||0;
-let tap=+localStorage.getItem("tap")||1;
-let auto=+localStorage.getItem("auto")||0;
-let energy=+localStorage.getItem("energy")||100;
-let maxEnergy=+localStorage.getItem("maxEnergy")||100;
-let level=+localStorage.getItem("level")||1;
-let xp=+localStorage.getItem("xp")||0;
-
-let pTap=+localStorage.getItem("pTap")||10;
-let pAuto=+localStorage.getItem("pAuto")||25;
-let pEnergy=+localStorage.getItem("pEnergy")||50;
-
-// ===== UI =====
-const $=id=>document.getElementById(id);
-function xpNeed(){return level*100}
-function currentRat(){
-  return rats.filter(r=>level>=r.lvl).slice(-1)[0].emoji;
 }
-function update(){
-  $("rat").textContent=currentRat();
-  $("levelText").textContent=T.level(level);
-  $("coinsText").textContent=T.coins(coins);
-  $("energyText").textContent=T.energy(energy,maxEnergy);
-  $("tapText").textContent=T.tap(tap);
-  $("autoText").textContent=T.auto(auto);
-  $("shopTitle").textContent=T.shop;
-  $("upTap").textContent=T.upTap(pTap);
-  $("upAuto").textContent=T.upAuto(pAuto);
-  $("upEnergy").textContent=T.upEnergy(pEnergy);
-}
-update();
-
-// ===== SAVE =====
-function save(){
-  localStorage.setItem("coins",coins);
-  localStorage.setItem("tap",tap);
-  localStorage.setItem("auto",auto);
-  localStorage.setItem("energy",energy);
-  localStorage.setItem("maxEnergy",maxEnergy);
-  localStorage.setItem("level",level);
-  localStorage.setItem("xp",xp);
-  localStorage.setItem("pTap",pTap);
-  localStorage.setItem("pAuto",pAuto);
-  localStorage.setItem("pEnergy",pEnergy);
-}
-
-// ===== TAP =====
-$("tapBtn").onclick=()=>{
-  if(energy<=0)return;
-  energy--;
-  coins+=tap;
-  xp+=tap;
-  if(xp>=xpNeed()){xp=0;level++}
-  save();update();
-};
-
-// ===== SHOP =====
-$("upTap").onclick=()=>{
-  if(coins<pTap)return;
-  coins-=pTap;tap++;pTap=Math.floor(pTap*1.6);
-  save();update();
-};
-$("upAuto").onclick=()=>{
-  if(coins<pAuto)return;
-  coins-=pAuto;auto++;pAuto=Math.floor(pAuto*1.7);
-  save();update();
-};
-$("upEnergy").onclick=()=>{
-  if(coins<pEnergy)return;
-  coins-=pEnergy;maxEnergy+=10;pEnergy=Math.floor(pEnergy*1.8);
-  save();update();
-};
-
-// ===== TIMERS =====
-setInterval(()=>{ if(energy<maxEnergy){energy++;save();update()} },2000);
-setInterval(()=>{ if(auto>0){coins+=auto;save();update()} },1000);
 </script>
 
 </body>
