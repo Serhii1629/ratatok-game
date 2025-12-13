@@ -1,102 +1,166 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>RATATOK</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      background:#111;
-      color:white;
-      text-align:center;
-      font-family:Arial;
-      margin-top:60px;
-      overflow:hidden;
-    }
-
-    #tapBtn {
-      font-size:40px;
-      padding:30px;
-      border-radius:20px;
-      border:none;
-      background:gold;
-    }
-
-    .plus {
-      position:absolute;
-      color:gold;
-      font-size:24px;
-      animation: fly 1s ease-out forwards;
-      pointer-events:none;
-    }
-
-    @keyframes fly {
-      from {
-        opacity:1;
-        transform:translateY(0);
-      }
-      to {
-        opacity:0;
-        transform:translateY(-50px);
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>RATATOK</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  background:#111;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+  margin-top:40px;
+  overflow:hidden;
+}
+button {
+  font-size:18px;
+  padding:15px 20px;
+  margin:10px;
+  border-radius:15px;
+  border:none;
+}
+#tapBtn {
+  font-size:40px;
+  padding:30px;
+  background:gold;
+}
+.shop {
+  background:#222;
+  padding:15px;
+  border-radius:15px;
+  margin:15px;
+}
+.plus {
+  position:absolute;
+  color:gold;
+  font-size:24px;
+  animation: fly 1s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes fly {
+  from {opacity:1; transform:translateY(0);}
+  to {opacity:0; transform:translateY(-50px);}
+}
+</style>
 </head>
 <body>
 
-  <h1>🐀 RATATOK</h1>
-  <p>Монеты: <span id="coins">0</span></p>
-  <p>⚡ Энергия: <span id="energy">100</span></p>
+<h1>🐀 RATATOK</h1>
 
-  <button id="tapBtn">🐀</button>
+<p>💰 Монеты: <span id="coins">0</span></p>
+<p>⚡ Энергия: <span id="energy">100</span></p>
+<p>👆 За тап: <span id="tapPower">1</span></p>
+<p>🤖 Автодоход: <span id="autoIncome">0</span>/сек</p>
 
-  <script>
-    const maxEnergy = 100;
+<button id="tapBtn">🐀</button>
 
-    let coins = Number(localStorage.getItem("ratatok_coins")) || 0;
-    let energy = Number(localStorage.getItem("ratatok_energy")) || maxEnergy;
+<div class="shop">
+  <h2>🛒 Магазин</h2>
+  <button id="upgradeTap">➕ Сила тапа (10)</button>
+  <button id="upgradeAuto">🤖 Автодоход (25)</button>
+</div>
 
-    const coinsEl = document.getElementById("coins");
-    const energyEl = document.getElementById("energy");
-    const btn = document.getElementById("tapBtn");
+<script>
+const maxEnergy = 100;
 
-    coinsEl.textContent = coins;
-    energyEl.textContent = energy;
+// загрузка
+let coins = Number(localStorage.getItem("coins")) || 0;
+let energy = Number(localStorage.getItem("energy")) || maxEnergy;
+let tapPower = Number(localStorage.getItem("tapPower")) || 1;
+let autoIncome = Number(localStorage.getItem("autoIncome")) || 0;
 
-    btn.addEventListener("click", () => {
-      if (energy <= 0) return;
+let tapPrice = Number(localStorage.getItem("tapPrice")) || 10;
+let autoPrice = Number(localStorage.getItem("autoPrice")) || 25;
 
-      coins++;
-      energy--;
+// элементы
+const coinsEl = document.getElementById("coins");
+const energyEl = document.getElementById("energy");
+const tapPowerEl = document.getElementById("tapPower");
+const autoIncomeEl = document.getElementById("autoIncome");
+const tapBtn = document.getElementById("tapBtn");
+const upgradeTapBtn = document.getElementById("upgradeTap");
+const upgradeAutoBtn = document.getElementById("upgradeAuto");
 
-      coinsEl.textContent = coins;
-      energyEl.textContent = energy;
+// обновление UI
+function updateUI() {
+  coinsEl.textContent = coins;
+  energyEl.textContent = energy;
+  tapPowerEl.textContent = tapPower;
+  autoIncomeEl.textContent = autoIncome;
+  upgradeTapBtn.textContent = `➕ Сила тапа (${tapPrice})`;
+  upgradeAutoBtn.textContent = `🤖 Автодоход (${autoPrice})`;
+}
+updateUI();
 
-      localStorage.setItem("ratatok_coins", coins);
-      localStorage.setItem("ratatok_energy", energy);
+// тап
+tapBtn.addEventListener("click", () => {
+  if (energy <= 0) return;
 
-      // +1 animation
-      const plus = document.createElement("div");
-      plus.className = "plus";
-      plus.textContent = "+1";
+  coins += tapPower;
+  energy--;
 
-      const rect = btn.getBoundingClientRect();
-      plus.style.left = rect.left + rect.width / 2 + "px";
-      plus.style.top = rect.top + "px";
+  save();
+  updateUI();
 
-      document.body.appendChild(plus);
-      setTimeout(() => plus.remove(), 1000);
-    });
+  const plus = document.createElement("div");
+  plus.className = "plus";
+  plus.textContent = "+" + tapPower;
+  const r = tapBtn.getBoundingClientRect();
+  plus.style.left = r.left + r.width/2 + "px";
+  plus.style.top = r.top + "px";
+  document.body.appendChild(plus);
+  setTimeout(() => plus.remove(), 1000);
+});
 
-    setInterval(() => {
-      if (energy < maxEnergy) {
-        energy++;
-        energyEl.textContent = energy;
-        localStorage.setItem("ratatok_energy", energy);
-      }
-    }, 2000);
-  </script>
+// апгрейд тапа
+upgradeTapBtn.onclick = () => {
+  if (coins < tapPrice) return;
+  coins -= tapPrice;
+  tapPower++;
+  tapPrice = Math.floor(tapPrice * 1.5);
+  save();
+  updateUI();
+};
+
+// апгрейд авто
+upgradeAutoBtn.onclick = () => {
+  if (coins < autoPrice) return;
+  coins -= autoPrice;
+  autoIncome++;
+  autoPrice = Math.floor(autoPrice * 1.7);
+  save();
+  updateUI();
+};
+
+// автодоход
+setInterval(() => {
+  if (autoIncome > 0) {
+    coins += autoIncome;
+    save();
+    updateUI();
+  }
+}, 1000);
+
+// восстановление энергии
+setInterval(() => {
+  if (energy < maxEnergy) {
+    energy++;
+    save();
+    updateUI();
+  }
+}, 2000);
+
+// сохранение
+function save() {
+  localStorage.setItem("coins", coins);
+  localStorage.setItem("energy", energy);
+  localStorage.setItem("tapPower", tapPower);
+  localStorage.setItem("autoIncome", autoIncome);
+  localStorage.setItem("tapPrice", tapPrice);
+  localStorage.setItem("autoPrice", autoPrice);
+}
+</script>
 
 </body>
 </html>
