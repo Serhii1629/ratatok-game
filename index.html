@@ -6,30 +6,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {
-  background:#111;
+  background:#0f0f0f;
   color:white;
-  text-align:center;
   font-family:Arial;
-  margin-top:40px;
+  text-align:center;
+  margin:0;
+  padding:20px;
   overflow:hidden;
 }
 button {
-  font-size:18px;
-  padding:15px 20px;
-  margin:10px;
-  border-radius:15px;
   border:none;
+  border-radius:16px;
+  padding:14px 20px;
+  margin:6px;
+  font-size:16px;
 }
 #tapBtn {
-  font-size:40px;
+  font-size:42px;
   padding:30px;
   background:gold;
 }
-.shop {
-  background:#222;
-  padding:15px;
-  border-radius:15px;
-  margin:15px;
+.card {
+  background:#1c1c1c;
+  border-radius:18px;
+  padding:14px;
+  margin:10px 0;
 }
 .plus {
   position:absolute;
@@ -40,7 +41,7 @@ button {
 }
 @keyframes fly {
   from {opacity:1; transform:translateY(0);}
-  to {opacity:0; transform:translateY(-50px);}
+  to {opacity:0; transform:translateY(-60px);}
 }
 </style>
 </head>
@@ -48,57 +49,89 @@ button {
 
 <h1>🐀 RATATOK</h1>
 
-<p>💰 Монеты: <span id="coins">0</span></p>
-<p>⚡ Энергия: <span id="energy">100</span></p>
-<p>👆 За тап: <span id="tapPower">1</span></p>
-<p>🤖 Автодоход: <span id="autoIncome">0</span>/сек</p>
+<div class="card">
+  <p>💰 Монеты: <span id="coins">0</span></p>
+  <p>⚡ Энергия: <span id="energy">0</span>/<span id="maxEnergy">0</span></p>
+  <p>👆 Тап: +<span id="tapPower">1</span></p>
+  <p>🤖 Автодоход: <span id="autoIncome">0</span>/сек</p>
+  <p>⭐ Уровень: <span id="level">1</span> (<span id="xp">0</span>/<span id="xpNeed">100</span>)</p>
+</div>
 
 <button id="tapBtn">🐀</button>
 
-<div class="shop">
-  <h2>🛒 Магазин</h2>
-  <button id="upgradeTap">➕ Сила тапа (10)</button>
-  <button id="upgradeAuto">🤖 Автодоход (25)</button>
+<div class="card">
+  <h3>🛒 Магазин</h3>
+  <button id="upTap"></button>
+  <button id="upAuto"></button>
+  <button id="upEnergy"></button>
 </div>
 
 <script>
-const maxEnergy = 100;
+// ====== НАСТРОЙКИ ======
+let coins = +localStorage.getItem("coins") || 0;
+let tapPower = +localStorage.getItem("tapPower") || 1;
+let autoIncome = +localStorage.getItem("autoIncome") || 0;
+let energy = +localStorage.getItem("energy") || 100;
+let maxEnergy = +localStorage.getItem("maxEnergy") || 100;
+let level = +localStorage.getItem("level") || 1;
+let xp = +localStorage.getItem("xp") || 0;
+let lastTime = +localStorage.getItem("lastTime") || Date.now();
 
-// загрузка
-let coins = Number(localStorage.getItem("coins")) || 0;
-let energy = Number(localStorage.getItem("energy")) || maxEnergy;
-let tapPower = Number(localStorage.getItem("tapPower")) || 1;
-let autoIncome = Number(localStorage.getItem("autoIncome")) || 0;
+let tapPrice = +localStorage.getItem("tapPrice") || 10;
+let autoPrice = +localStorage.getItem("autoPrice") || 25;
+let energyPrice = +localStorage.getItem("energyPrice") || 50;
 
-let tapPrice = Number(localStorage.getItem("tapPrice")) || 10;
-let autoPrice = Number(localStorage.getItem("autoPrice")) || 25;
+// ====== ОФФЛАЙН ДОХОД ======
+let diff = Math.floor((Date.now() - lastTime) / 1000);
+if (diff > 0) coins += diff * autoIncome;
 
-// элементы
-const coinsEl = document.getElementById("coins");
-const energyEl = document.getElementById("energy");
-const tapPowerEl = document.getElementById("tapPower");
-const autoIncomeEl = document.getElementById("autoIncome");
-const tapBtn = document.getElementById("tapBtn");
-const upgradeTapBtn = document.getElementById("upgradeTap");
-const upgradeAutoBtn = document.getElementById("upgradeAuto");
+// ====== ЭЛЕМЕНТЫ ======
+const el = id => document.getElementById(id);
 
-// обновление UI
+// ====== UI ======
+function xpNeed() { return level * 100; }
+
 function updateUI() {
-  coinsEl.textContent = coins;
-  energyEl.textContent = energy;
-  tapPowerEl.textContent = tapPower;
-  autoIncomeEl.textContent = autoIncome;
-  upgradeTapBtn.textContent = `➕ Сила тапа (${tapPrice})`;
-  upgradeAutoBtn.textContent = `🤖 Автодоход (${autoPrice})`;
+  el("coins").textContent = coins;
+  el("energy").textContent = energy;
+  el("maxEnergy").textContent = maxEnergy;
+  el("tapPower").textContent = tapPower;
+  el("autoIncome").textContent = autoIncome;
+  el("level").textContent = level;
+  el("xp").textContent = xp;
+  el("xpNeed").textContent = xpNeed();
+  el("upTap").textContent = `➕ Тап (${tapPrice})`;
+  el("upAuto").textContent = `🤖 Авто (${autoPrice})`;
+  el("upEnergy").textContent = `⚡ Энергия (${energyPrice})`;
 }
 updateUI();
 
-// тап
-tapBtn.addEventListener("click", () => {
-  if (energy <= 0) return;
+// ====== СОХРАНЕНИЕ ======
+function save() {
+  localStorage.setItem("coins", coins);
+  localStorage.setItem("tapPower", tapPower);
+  localStorage.setItem("autoIncome", autoIncome);
+  localStorage.setItem("energy", energy);
+  localStorage.setItem("maxEnergy", maxEnergy);
+  localStorage.setItem("level", level);
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("tapPrice", tapPrice);
+  localStorage.setItem("autoPrice", autoPrice);
+  localStorage.setItem("energyPrice", energyPrice);
+  localStorage.setItem("lastTime", Date.now());
+}
 
-  coins += tapPower;
+// ====== ТАП ======
+el("tapBtn").onclick = () => {
+  if (energy <= 0) return;
   energy--;
+  coins += tapPower;
+  xp += tapPower;
+
+  if (xp >= xpNeed()) {
+    xp = 0;
+    level++;
+  }
 
   save();
   updateUI();
@@ -106,60 +139,48 @@ tapBtn.addEventListener("click", () => {
   const plus = document.createElement("div");
   plus.className = "plus";
   plus.textContent = "+" + tapPower;
-  const r = tapBtn.getBoundingClientRect();
+  const r = el("tapBtn").getBoundingClientRect();
   plus.style.left = r.left + r.width/2 + "px";
   plus.style.top = r.top + "px";
   document.body.appendChild(plus);
   setTimeout(() => plus.remove(), 1000);
-});
+};
 
-// апгрейд тапа
-upgradeTapBtn.onclick = () => {
+// ====== МАГАЗИН ======
+el("upTap").onclick = () => {
   if (coins < tapPrice) return;
   coins -= tapPrice;
   tapPower++;
-  tapPrice = Math.floor(tapPrice * 1.5);
-  save();
-  updateUI();
+  tapPrice = Math.floor(tapPrice * 1.6);
+  save(); updateUI();
 };
 
-// апгрейд авто
-upgradeAutoBtn.onclick = () => {
+el("upAuto").onclick = () => {
   if (coins < autoPrice) return;
   coins -= autoPrice;
   autoIncome++;
   autoPrice = Math.floor(autoPrice * 1.7);
-  save();
-  updateUI();
+  save(); updateUI();
 };
 
-// автодоход
-setInterval(() => {
-  if (autoIncome > 0) {
-    coins += autoIncome;
-    save();
-    updateUI();
-  }
-}, 1000);
+el("upEnergy").onclick = () => {
+  if (coins < energyPrice) return;
+  coins -= energyPrice;
+  maxEnergy += 10;
+  energyPrice = Math.floor(energyPrice * 1.8);
+  save(); updateUI();
+};
 
-// восстановление энергии
+// ====== ТАЙМЕРЫ ======
 setInterval(() => {
-  if (energy < maxEnergy) {
-    energy++;
-    save();
-    updateUI();
-  }
+  if (energy < maxEnergy) energy++;
+  save(); updateUI();
 }, 2000);
 
-// сохранение
-function save() {
-  localStorage.setItem("coins", coins);
-  localStorage.setItem("energy", energy);
-  localStorage.setItem("tapPower", tapPower);
-  localStorage.setItem("autoIncome", autoIncome);
-  localStorage.setItem("tapPrice", tapPrice);
-  localStorage.setItem("autoPrice", autoPrice);
-}
+setInterval(() => {
+  coins += autoIncome;
+  save(); updateUI();
+}, 1000);
 </script>
 
 </body>
