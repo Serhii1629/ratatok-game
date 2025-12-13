@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>RATATOK</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+    }
+    button {
+      font-size: 40px;
+      padding: 30px;
+      border-radius: 20px;
+      border: none;
+      background: gold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🐀 RATATOK</h1>
+  <p>Монеты: <span id="coins">0</span></p>
+
+  <button onclick="tap()">🐀</button>
+
+  <script>
+    let coins = 0;
+    function tap() {
+      coins++;
+      document.getElementById("coins").innerText = coins;
+    }
+  </script>
+
+</body>
+</html>
