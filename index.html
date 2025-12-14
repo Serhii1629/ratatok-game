@@ -5,215 +5,209 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RATATOK</title>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,Roboto;user-select:none}
-body{background:#000;color:#fff;height:100vh;overflow:hidden}
-
-/* HEADER */
-.header{text-align:center;padding:18px}
-.header h1{font-size:26px;font-weight:700}
-.stats{margin-top:6px;font-size:16px;opacity:.9}
-
-/* SECTIONS */
-.section{display:none;height:calc(100vh - 190px)}
-.section.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
-
-/* TAP */
-#tapArea{
-width:280px;height:280px;
-background:#ffd400;border-radius:48px;
-display:flex;align-items:center;justify-content:center;
-box-shadow:0 0 60px rgba(255,212,0,.4)
+body {
+  margin: 0;
+  background: #0b0b0b;
+  color: white;
+  font-family: Arial;
+  text-align: center;
 }
-#tapArea:active{filter:brightness(1.04)}
-#tapArea img{width:180px;height:180px;pointer-events:none}
-
-/* CONTENT */
-.content{padding:22px;text-align:center;font-size:18px}
-
-/* BUTTONS */
-.big-btn{
-margin-top:16px;padding:16px 26px;
-border:none;border-radius:18px;
-background:#ffd400;font-size:18px;font-weight:600
+header { padding: 10px; font-size: 20px; }
+#stats { display:flex; justify-content:space-around; }
+#rat {
+  margin: 30px auto;
+  width: 180px; height: 180px;
+  background:#FFD600;
+  border-radius:30px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:80px;
 }
-
-/* MENU */
-.menu{
-position:fixed;bottom:0;width:100%;
-background:#0e0e0e;
-display:flex;justify-content:space-around;
-padding:14px 0;border-top:1px solid #222
+button {
+  padding:10px 16px;
+  margin:4px;
+  border-radius:10px;
+  border:none;
 }
-.menu button{
-background:none;border:none;
-color:#777;font-size:22px;
-padding:14px 24px;border-radius:18px
+.panel {
+  background:#111;
+  margin:10px;
+  padding:10px;
+  border-radius:12px;
 }
-.menu button.active{
-background:#1a1a1a;color:#ffd400
-}
-
-/* LANGUAGE */
-.lang{
-position:fixed;top:14px;right:14px;
-background:#1a1a1a;padding:8px 12px;
-border-radius:14px;font-size:14px
+.hidden { display:none; }
+#menu {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#111;
+  padding:10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="lang" onclick="toggleLang()">🌍 <span id="lang">RU</span></div>
+<header>🐀 RATATOK</header>
 
-<div class="header">
-<h1 id="ratName">🐀 RATATOK</h1>
-<div class="stats">
-<span id="lvlTxt">Уровень</span>: <span id="level">1</span> |
-<span id="coinTxt">Очки</span>: <span id="coins">0</span>
-</div>
+<div id="stats">
+  <div>⭐ <span id="points">0</span></div>
+  <div>⚡ <span id="energy">100</span></div>
+  <div>📈 Lv <span id="level">1</span></div>
 </div>
 
-<!-- GAME -->
-<div class="section active" id="game">
-<div id="tapArea"><img id="ratImg"></div>
+<div id="rat">🐀</div>
+
+<div id="tasks" class="panel hidden">
+  <h3>🎯 Задания</h3>
+  <div id="taskText"></div>
+  <button onclick="closeTasks()">Закрыть</button>
 </div>
 
-<!-- SHOP -->
-<div class="section" id="shop">
-<div class="content">
-<h2>🛒 Магазин</h2>
-<p>+1 очко за тап</p>
-<button class="big-btn" onclick="buyBoost()">Купить (100)</button>
-<p style="opacity:.6;margin-top:10px">TON — скоро</p>
-</div>
+<div id="shop" class="panel hidden">
+  <h3>🛒 Магазин</h3>
+  <button onclick="buyEnergy()">⚡ +50 энергии (30)</button><br>
+  <button onclick="buyAuto()">🤖 Автокликер (200)</button><br>
+  <button onclick="closeShop()">Закрыть</button>
 </div>
 
-<!-- REF -->
-<div class="section" id="ref">
-<div class="content">
-<h2>👥 Рефералы</h2>
-<p>Приглашай друзей</p>
-<p style="margin-top:10px;color:#ffd400;word-break:break-all">
-t.me/your_bot?start=RATATOK
-</p>
-</div>
+<div id="menu">
+  <button onclick="openTasks()">🎯</button>
+  <button onclick="openShop()">🛒</button>
+  <button onclick="copyRef()">🎁</button>
 </div>
 
-<!-- AIRDROP -->
-<div class="section" id="air">
-<div class="content">
-<h2>🎁 AIRDROP RATATOK</h2>
-<p>Твои airdrop points:</p>
-<h1 id="air">0</h1>
-<p style="opacity:.7;margin-top:10px">
-Очки → RATATOK после снапшота
-</p>
-</div>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-<div class="menu">
-<button class="active" onclick="openTab('game',this)">🐀</button>
-<button onclick="openTab('shop',this)">🛒</button>
-<button onclick="openTab('ref',this)">👥</button>
-<button onclick="openTab('air',this)">🎁</button>
-</div>
-
-<script>
-Telegram.WebApp.ready();
-Telegram.WebApp.expand();
-
-/* DATA */
-const rats=[
-{n:"RATATOK",i:"https://em-content.zobj.net/source/apple/354/rat_1f400.png"},
-{n:"FAST RATATOK",i:"https://em-content.zobj.net/source/apple/354/mouse_1f401.png"},
-{n:"GOLD RATATOK",i:"https://em-content.zobj.net/source/apple/354/hamster_1f439.png"}
-];
-
-let coins=+localStorage.getItem("coins")||0;
-let level=+localStorage.getItem("level")||1;
-let power=+localStorage.getItem("power")||1;
-let air=+localStorage.getItem("air")||0;
-let lang=localStorage.getItem("lang")||"ru";
-let lastTap=0;
-
-/* ELEMENTS */
-const coinsEl=document.getElementById("coins");
-const levelEl=document.getElementById("level");
-const airEl=document.getElementById("air");
-const ratImg=document.getElementById("ratImg");
-const ratName=document.getElementById("ratName");
-
-function updateRat(){
-let i=Math.min(rats.length-1,Math.floor((level-1)/2));
-ratImg.src=rats[i].i;
-ratName.textContent="🐀 "+rats[i].n;
-}
-
-function save(){
-localStorage.setItem("coins",coins);
-localStorage.setItem("level",level);
-localStorage.setItem("power",power);
-localStorage.setItem("air",air);
-}
-
-/* TAP + ANTICHEAT */
-tapArea.onclick=()=>{
-let now=Date.now();
-if(now-lastTap<120)return;
-lastTap=now;
-
-coins+=power;
-air+=power;
-
-if(coins%50===0){level++;updateRat()}
-save();
-
-coinsEl.textContent=coins;
-levelEl.textContent=level;
-airEl.textContent=air;
-
-Telegram.WebApp.HapticFeedback.impactOccurred("light");
+/* 🔥 FIREBASE */
+const firebaseConfig = {
+  apiKey: "AIzaSyB1Ln1WuJyjqFPEE6NblANZj-2P7SS7b40",
+  authDomain: "ratatok-33746.firebaseapp.com",
+  projectId: "ratatok-33746",
+  storageBucket: "ratatok-33746.firebasestorage.app",
+  messagingSenderId: "959368453562",
+  appId: "1:959368453562:web:35c128b473b74029a71183",
+  databaseURL: "https://ratatok-33746-default-rtdb.firebaseio.com"
 };
 
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* USER */
+const params = new URLSearchParams(location.search);
+const referrer = params.get("ref");
+
+const uid = localStorage.getItem("uid") || "u_" + Math.random().toString(36).slice(2);
+localStorage.setItem("uid", uid);
+
+let points=0, energy=100, level=1, auto=false, clicks=0;
+let lastClick=0;
+
+/* LOAD */
+get(ref(db,"users/"+uid)).then(s=>{
+  if(s.exists()){
+    let d=s.val();
+    points=d.points||0;
+    energy=d.energy||100;
+    level=d.level||1;
+    auto=d.auto||false;
+    clicks=d.clicks||0;
+    updateUI();
+    if(auto) startAuto();
+  } else if(referrer){
+    update(ref(db,"users/"+referrer),{ points: (points||0)+50 });
+  }
+});
+
+/* UI */
+const pEl=pointsEl, eEl=energyEl, lEl=levelEl;
+function updateUI(){
+  pEl.textContent=points;
+  eEl.textContent=energy;
+  lEl.textContent=level;
+}
+
+/* SAVE */
+function save(){
+  set(ref(db,"users/"+uid),{points,energy,level,auto,clicks});
+}
+
+/* CLICK + ANTICHEAT */
+rat.onclick=()=>{
+  const now=Date.now();
+  if(now-lastClick<300) return; // защита
+  if(energy<=0) return;
+  lastClick=now;
+
+  clicks++;
+  points++;
+  energy--;
+  level = Math.floor(points/100)+1;
+  updateUI();
+  save();
+};
+
+/* ENERGY REGEN */
+setInterval(()=>{
+  if(energy<100){
+    energy++;
+    updateUI();
+    save();
+  }
+},3000);
+
+/* AUTO */
+function startAuto(){
+  setInterval(()=>{
+    if(energy>0){
+      points++;
+      energy--;
+      level=Math.floor(points/100)+1;
+      updateUI();
+      save();
+    }
+  },2500);
+}
+
+/* TASKS */
+function openTasks(){
+  tasks.classList.remove("hidden");
+  taskText.innerHTML = clicks>=20
+    ? "✅ Задание выполнено! +50 очков"
+    : `Сделай 20 кликов (${clicks}/20)`;
+  if(clicks>=20){
+    points+=50;
+    clicks=0;
+    save();
+    updateUI();
+  }
+}
+window.openTasks=openTasks;
+window.closeTasks=()=>tasks.classList.add("hidden");
+
 /* SHOP */
-function buyBoost(){
-if(coins>=100){
-coins-=100;
-power++;
-save();
-coinsEl.textContent=coins;
-alert("Усиление куплено");
-}else alert("Не хватает очков");
+window.openShop=()=>shop.classList.remove("hidden");
+window.closeShop=()=>shop.classList.add("hidden");
+window.buyEnergy=()=>{
+  if(points>=30){
+    points-=30; energy+=50;
+    updateUI(); save();
+  }
+}
+window.buyAuto=()=>{
+  if(points>=200 && !auto){
+    auto=true; points-=200;
+    startAuto(); save();
+  }
 }
 
-/* MENU */
-function openTab(id,b){
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-document.querySelectorAll(".menu button").forEach(x=>x.classList.remove("active"));
-b.classList.add("active");
+/* REF */
+window.copyRef=()=>{
+  navigator.clipboard.writeText(location.origin+"?ref="+uid);
+  alert("Реферальная ссылка скопирована");
 }
-
-/* LANG */
-function toggleLang(){
-lang=lang==="ru"?"en":"ru";
-localStorage.setItem("lang",lang);
-document.getElementById("lang").textContent=lang.toUpperCase();
-document.getElementById("lvlTxt").textContent=lang==="ru"?"Уровень":"Level";
-document.getElementById("coinTxt").textContent=lang==="ru"?"Очки":"Points";
-}
-
-/* INIT */
-coinsEl.textContent=coins;
-levelEl.textContent=level;
-airEl.textContent=air;
-document.getElementById("lang").textContent=lang.toUpperCase();
-updateRat();
 </script>
-
 </body>
 </html>
