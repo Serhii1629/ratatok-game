@@ -2,212 +2,166 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>RATATOK</title>
 
 <style>
-body {
-  margin: 0;
-  background: #0b0b0b;
-  color: white;
-  font-family: Arial;
-  text-align: center;
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color: transparent;
 }
-header { padding: 10px; font-size: 20px; }
-#stats { display:flex; justify-content:space-around; }
-#rat {
-  margin: 30px auto;
-  width: 180px; height: 180px;
-  background:#FFD600;
-  border-radius:30px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:80px;
+body{
+  margin:0;
+  background:#0b0b0f;
+  color:white;
+  font-family:Arial, sans-serif;
+  overflow:hidden;
 }
-button {
-  padding:10px 16px;
-  margin:4px;
-  border-radius:10px;
-  border:none;
-}
-.panel {
-  background:#111;
-  margin:10px;
+#top{
+  display:flex;
+  justify-content:space-between;
   padding:10px;
-  border-radius:12px;
+  font-size:18px;
 }
-.hidden { display:none; }
-#menu {
+#game{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:60vh;
+}
+#rat{
+  width:220px;
+  height:220px;
+  background:url("https://i.imgur.com/2yaf2wb.png") center/contain no-repeat;
+  touch-action: manipulation;
+}
+#menu{
   position:fixed;
   bottom:0;
+  left:0;
   width:100%;
+  display:flex;
   background:#111;
-  padding:10px;
+}
+.btn{
+  flex:1;
+  padding:15px;
+  text-align:center;
+  font-size:16px;
+  border:none;
+  background:#1c1c28;
+  color:white;
+}
+.btn:active{
+  background:#333;
+}
+.hidden{display:none;}
+.panel{
+  position:fixed;
+  bottom:60px;
+  left:0;
+  width:100%;
+  background:#14141c;
+  padding:15px;
 }
 </style>
 </head>
 
 <body>
 
-<header>🐀 RATATOK</header>
-
-<div id="stats">
-  <div>⭐ <span id="points">0</span></div>
-  <div>⚡ <span id="energy">100</span></div>
-  <div>📈 Lv <span id="level">1</span></div>
+<div id="top">
+  <div>⚡ <span id="energy">1000</span></div>
+  <div>💰 <span id="coins">0</span></div>
 </div>
 
-<div id="rat">🐀</div>
-
-<div id="tasks" class="panel hidden">
-  <h3>🎯 Задания</h3>
-  <div id="taskText"></div>
-  <button onclick="closeTasks()">Закрыть</button>
+<div id="game">
+  <div id="rat"></div>
 </div>
 
 <div id="shop" class="panel hidden">
   <h3>🛒 Магазин</h3>
-  <button onclick="buyEnergy()">⚡ +50 энергии (30)</button><br>
-  <button onclick="buyAuto()">🤖 Автокликер (200)</button><br>
-  <button onclick="closeShop()">Закрыть</button>
+  <button class="btn" onclick="buyEnergy()">+100 Энергии (100💰)</button>
+</div>
+
+<div id="ref" class="panel hidden">
+  <h3>👥 Рефералы</h3>
+  <p>Твоя ссылка:</p>
+  <small id="refLink"></small>
 </div>
 
 <div id="menu">
-  <button onclick="openTasks()">🎯</button>
-  <button onclick="openShop()">🛒</button>
-  <button onclick="copyRef()">🎁</button>
+  <button class="btn" onclick="showPanel()">🎮 Играть</button>
+  <button class="btn" onclick="openShop()">🛒 Магазин</button>
+  <button class="btn" onclick="openRef()">👥 Рефералы</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-/* 🔥 FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyB1Ln1WuJyjqFPEE6NblANZj-2P7SS7b40",
   authDomain: "ratatok-33746.firebaseapp.com",
   projectId: "ratatok-33746",
   storageBucket: "ratatok-33746.firebasestorage.app",
   messagingSenderId: "959368453562",
-  appId: "1:959368453562:web:35c128b473b74029a71183",
-  databaseURL: "https://ratatok-33746-default-rtdb.firebaseio.com"
+  appId: "1:959368453562:web:35c128b473b74029a71183"
 };
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-/* USER */
-const params = new URLSearchParams(location.search);
-const referrer = params.get("ref");
-
-const uid = localStorage.getItem("uid") || "u_" + Math.random().toString(36).slice(2);
-localStorage.setItem("uid", uid);
-
-let points=0, energy=100, level=1, auto=false, clicks=0;
-let lastClick=0;
-
-/* LOAD */
-get(ref(db,"users/"+uid)).then(s=>{
-  if(s.exists()){
-    let d=s.val();
-    points=d.points||0;
-    energy=d.energy||100;
-    level=d.level||1;
-    auto=d.auto||false;
-    clicks=d.clicks||0;
-    updateUI();
-    if(auto) startAuto();
-  } else if(referrer){
-    update(ref(db,"users/"+referrer),{ points: (points||0)+50 });
-  }
-});
-
-/* UI */
-const pEl=pointsEl, eEl=energyEl, lEl=levelEl;
-function updateUI(){
-  pEl.textContent=points;
-  eEl.textContent=energy;
-  lEl.textContent=level;
-}
-
-/* SAVE */
-function save(){
-  set(ref(db,"users/"+uid),{points,energy,level,auto,clicks});
-}
-
-/* CLICK + ANTICHEAT */
-rat.onclick=()=>{
-  const now=Date.now();
-  if(now-lastClick<300) return; // защита
-  if(energy<=0) return;
-  lastClick=now;
-
-  clicks++;
-  points++;
-  energy--;
-  level = Math.floor(points/100)+1;
-  updateUI();
-  save();
-};
-
-/* ENERGY REGEN */
-setInterval(()=>{
-  if(energy<100){
-    energy++;
-    updateUI();
-    save();
-  }
-},3000);
-
-/* AUTO */
-function startAuto(){
-  setInterval(()=>{
-    if(energy>0){
-      points++;
-      energy--;
-      level=Math.floor(points/100)+1;
-      updateUI();
-      save();
-    }
-  },2500);
-}
-
-/* TASKS */
-function openTasks(){
-  tasks.classList.remove("hidden");
-  taskText.innerHTML = clicks>=20
-    ? "✅ Задание выполнено! +50 очков"
-    : `Сделай 20 кликов (${clicks}/20)`;
-  if(clicks>=20){
-    points+=50;
-    clicks=0;
-    save();
-    updateUI();
-  }
-}
-window.openTasks=openTasks;
-window.closeTasks=()=>tasks.classList.add("hidden");
-
-/* SHOP */
-window.openShop=()=>shop.classList.remove("hidden");
-window.closeShop=()=>shop.classList.add("hidden");
-window.buyEnergy=()=>{
-  if(points>=30){
-    points-=30; energy+=50;
-    updateUI(); save();
-  }
-}
-window.buyAuto=()=>{
-  if(points>=200 && !auto){
-    auto=true; points-=200;
-    startAuto(); save();
-  }
-}
-
-/* REF */
-window.copyRef=()=>{
-  navigator.clipboard.writeText(location.origin+"?ref="+uid);
-  alert("Реферальная ссылка скопирована");
-}
+initializeApp(firebaseConfig);
 </script>
+
+<script>
+let coins = Number(localStorage.getItem("coins")) || 0;
+let energy = Number(localStorage.getItem("energy")) || 1000;
+
+const coinsEl = document.getElementById("coins");
+const energyEl = document.getElementById("energy");
+const rat = document.getElementById("rat");
+
+function update(){
+  coinsEl.textContent = coins;
+  energyEl.textContent = energy;
+  localStorage.setItem("coins", coins);
+  localStorage.setItem("energy", energy);
+}
+update();
+
+// ТАП (ОДИН РАЗ)
+rat.addEventListener("touchstart", e=>{
+  e.preventDefault();
+  if(energy<=0) return;
+  energy--;
+  coins++;
+  update();
+},{passive:false});
+
+function openShop(){
+  hideAll();
+  document.getElementById("shop").classList.remove("hidden");
+}
+function openRef(){
+  hideAll();
+  document.getElementById("ref").classList.remove("hidden");
+}
+function showPanel(){
+  hideAll();
+}
+function hideAll(){
+  document.getElementById("shop").classList.add("hidden");
+  document.getElementById("ref").classList.add("hidden");
+}
+function buyEnergy(){
+  if(coins>=100){
+    coins-=100;
+    energy+=100;
+    update();
+  }
+}
+
+// реф ссылка
+const uid = Math.floor(Math.random()*999999);
+document.getElementById("refLink").textContent =
+`https://t.me/ТВОЙ_БОТ?start=${uid}`;
+</script>
+
 </body>
 </html>
