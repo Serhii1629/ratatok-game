@@ -59,13 +59,10 @@ button:hover{background:#333}
 
 <script>
 // ---------- ДАННЫЕ ----------
-const RATS = [
- {img:"https://i.imgur.com/2yaf2wb.png",taps:0},
- {img:"https://i.imgur.com/6X6Jv6s.png",taps:1000},
- {img:"https://i.imgur.com/m7YQZ9Z.png",taps:10000},
- {img:"https://i.imgur.com/p3xx6Gr.png",taps:100000},
- {img:"https://i.imgur.com/4mjX4L9.png",taps:1000000}
-];
+const RATS = [];
+for(let i=0;i<100;i++){ // Генерируем 100 уровней
+  RATS.push({img:`https://i.imgur.com/2yaf2wb.png`,taps: i*1000}); // Можно менять картинку для каждого уровня
+}
 
 const SHOP = [
  {id:1,name:"Энергия +50",energy:50,price:50,rarity:"common"},
@@ -111,9 +108,7 @@ function updateUI(){
  levelEl.textContent = state.level
 
  let rat = RATS[0]
- for(let r of RATS){
-   if(state.taps >= r.taps) rat = r
- }
+ for(let r of RATS){if(state.taps>=r.taps) rat=r}
  ratBtn.style.backgroundImage = `url(${rat.img})`
 
  renderShop()
@@ -188,17 +183,15 @@ function buyCard(id){
 
 // ---------- РЕФЕРАЛ ----------
 function renderRef(){
- // создаём уникальный код для текущего пользователя
  let myCode = localStorage.getItem("myRefCode")
  if(!myCode){
    myCode = Math.random().toString(36).substr(2,8)
    localStorage.setItem("myRefCode",myCode)
  }
-
  refLinkEl.textContent = location.origin + location.pathname + "?ref=" + myCode
 }
 
-// проверяем реферал при первом заходе
+// проверяем реферал при заходе
 (function checkReferral(){
  const urlParams = new URLSearchParams(window.location.search)
  const ref = urlParams.get("ref")
@@ -228,6 +221,5 @@ renderShop()
 renderCards()
 updateUI()
 </script>
-
 </body>
 </html>
