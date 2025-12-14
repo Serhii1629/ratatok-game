@@ -8,8 +8,8 @@
 body{margin:0;font-family:Arial,sans-serif;background:#0b0b0f;color:#fff;overflow-x:hidden}
 #top{display:flex;justify-content:space-around;padding:12px;background:#111;font-size:16px;font-weight:bold}
 #tapArea{display:flex;justify-content:center;align-items:center;height:50vh}
-#rat{width:250px;height:250px;background-size:contain;background-position:center;background-repeat:no-repeat;cursor:pointer;transition:transform .1s}
-#rat.tap{transform:scale(1.1) rotate(-5deg);}
+#ratBtn{width:250px;height:250px;background-size:contain;background-position:center;background-repeat:no-repeat;cursor:pointer;transition:transform .1s;border:none;border-radius:20px;background-color:#1c1c28}
+#ratBtn.tap{transform:scale(1.1) rotate(-5deg);}
 #menu{position:fixed;bottom:0;width:100%;display:flex;z-index:10}
 button{flex:1;padding:14px;border:none;background:#1c1c28;color:#fff;font-size:14px;cursor:pointer;transition:0.2s}
 button:hover{background:#333}
@@ -31,7 +31,7 @@ button:hover{background:#333}
 </div>
 
 <div id="tapArea">
-  <div id="rat"></div>
+  <button id="ratBtn"></button>
 </div>
 
 <div id="shop" class="panel">
@@ -60,11 +60,11 @@ button:hover{background:#333}
 <script>
 // ---------- ДАННЫЕ ----------
 const RATS = [
- {lvl:1, img:"https://i.imgur.com/2yaf2wb.png", taps:0},
- {lvl:2, img:"https://i.imgur.com/6X6Jv6s.png", taps:1000},
- {lvl:3, img:"https://i.imgur.com/m7YQZ9Z.png", taps:10000},
- {lvl:4, img:"https://i.imgur.com/p3xx6Gr.png", taps:100000},
- {lvl:5, img:"https://i.imgur.com/4mjX4L9.png", taps:1000000}
+ {img:"https://i.imgur.com/2yaf2wb.png",taps:0},
+ {img:"https://i.imgur.com/6X6Jv6s.png",taps:1000},
+ {img:"https://i.imgur.com/m7YQZ9Z.png",taps:10000},
+ {img:"https://i.imgur.com/p3xx6Gr.png",taps:100000},
+ {img:"https://i.imgur.com/4mjX4L9.png",taps:1000000}
 ];
 
 const SHOP = [
@@ -77,8 +77,7 @@ const CARDS = [
  {id:1,name:"+1 за тап",tap:1,price:50,rarity:"common"},
  {id:2,name:"+5 за тап",tap:5,price:200,rarity:"rare"},
  {id:3,name:"+10 пассивно/сек",passive:10,price:500,rarity:"rare"},
- {id:4,name:"+50 пассивно/сек",passive:50,price:2000,rarity:"legendary"},
- {id:5,name:"+100 пассивно/сек",passive:100,price:5000,rarity:"legendary"}
+ {id:4,name:"+50 пассивно/сек",passive:50,price:2000,rarity:"legendary"}
 ];
 
 // ---------- СОСТОЯНИЕ ----------
@@ -101,7 +100,7 @@ function save(){localStorage.setItem("ratatok",JSON.stringify(state))}
 const coinsEl = document.getElementById("coins")
 const energyEl = document.getElementById("energy")
 const levelEl = document.getElementById("level")
-const ratEl = document.getElementById("rat")
+const ratBtn = document.getElementById("ratBtn")
 const shopItems = document.getElementById("shopItems")
 const cardItems = document.getElementById("cardItems")
 const refLinkEl = document.getElementById("refLink")
@@ -112,24 +111,26 @@ function updateUI(){
  levelEl.textContent = state.level
 
  let rat = RATS[0]
- for(let r of RATS){if(state.taps>=r.taps) rat=r}
- ratEl.style.backgroundImage = `url(${rat.img})`
+ for(let r of RATS){
+   if(state.taps >= r.taps) rat = r
+ }
+ ratBtn.style.backgroundImage = `url(${rat.img})`
 
  renderShop()
  renderCards()
- initRef()
+ renderRef()
  save()
 }
 
 // ---------- ТАП ----------
-ratEl.onclick = ()=>{
+ratBtn.onclick = ()=>{
  if(state.energy<=0) return
  state.energy--
  state.coins += state.tap
  state.taps++
  if(state.taps >= state.level*1000) state.level++
- ratEl.classList.add("tap")
- setTimeout(()=>ratEl.classList.remove("tap"),100)
+ ratBtn.classList.add("tap")
+ setTimeout(()=>ratBtn.classList.remove("tap"),100)
  updateUI()
 }
 
@@ -186,14 +187,29 @@ function buyCard(id){
 }
 
 // ---------- РЕФЕРАЛ ----------
-function initRef(){
- let id = localStorage.getItem("refid")
- if(!id){
-   id = Math.random().toString(36).substr(2,8)
-   localStorage.setItem("refid",id)
+function renderRef(){
+ // создаём уникальный код для текущего пользователя
+ let myCode = localStorage.getItem("myRefCode")
+ if(!myCode){
+   myCode = Math.random().toString(36).substr(2,8)
+   localStorage.setItem("myRefCode",myCode)
  }
- refLinkEl.textContent = location.origin + location.pathname + "?ref=" + id
+
+ refLinkEl.textContent = location.origin + location.pathname + "?ref=" + myCode
 }
+
+// проверяем реферал при первом заходе
+(function checkReferral(){
+ const urlParams = new URLSearchParams(window.location.search)
+ const ref = urlParams.get("ref")
+ if(ref && !state.refClaimed){
+   state.coins += 500
+   state.refClaimed = true
+   alert("Вы получили 500 монет за реферал!")
+   save()
+ }
+})()
+
 function claimReferral(){
  if(!state.refClaimed){
    state.coins += 500
@@ -210,7 +226,6 @@ function hidePanels(){document.querySelectorAll(".panel").forEach(p=>p.style.dis
 // ---------- ИНИЦИАЛИЗАЦИЯ ----------
 renderShop()
 renderCards()
-initRef()
 updateUI()
 </script>
 
