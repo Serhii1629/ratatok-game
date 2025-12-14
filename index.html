@@ -3,73 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RATATOK</title>
-
+<title>RATATOK PRO</title>
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:#0b0b0f;
-  color:#fff;
-  font-family:Arial,sans-serif;
-}
-#top{
-  display:flex;
-  justify-content:space-around;
-  padding:10px;
-  background:#111;
-}
-#game{
-  height:40vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-#rat{
-  width:220px;
-  height:220px;
-  background-size:contain;
-  background-repeat:no-repeat;
-  background-position:center;
-  transition:transform .1s;
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0b0b0f;color:#fff;font-family:Arial,sans-serif}
+#top{display:flex;justify-content:space-around;padding:10px;background:#111}
+#rat-wrap{display:flex;justify-content:center;align-items:center;height:40vh}
+#rat{width:220px;height:220px;background-size:contain;background-repeat:no-repeat;background-position:center;transition:transform .1s;cursor:pointer}
 #rat:active{transform:scale(1.08)}
-
-#menu{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  display:flex;
-}
-button{
-  flex:1;
-  padding:14px;
-  background:#1c1c28;
-  border:none;
-  color:#fff;
-  font-size:14px;
-}
+#menu{position:fixed;bottom:0;width:100%;display:flex}
+button{flex:1;padding:14px;background:#1c1c28;border:none;color:#fff;font-size:14px}
 button:active{background:#333}
-
-.panel{
-  position:fixed;
-  bottom:52px;
-  width:100%;
-  max-height:50vh;
-  background:#14141c;
-  overflow:auto;
-  padding:10px;
-  display:none;
-}
-.card{
-  background:#1e1e2c;
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:8px;
-}
+.panel{position:fixed;bottom:52px;width:100%;max-height:50vh;background:#14141c;overflow:auto;padding:10px;display:none}
+.card{background:#1e1e2c;padding:10px;border-radius:10px;margin-bottom:8px}
+.card button{width:100%;padding:6px;border:none;border-radius:6px;background:#2c2c44;color:#fff}
+.card button:disabled{opacity:.4}
+.legendary{border:2px solid gold;box-shadow:0 0 10px gold}
+.rare{border:2px solid #3b82f6}
+.common{border:2px solid #555}
 </style>
 </head>
-
 <body>
 
 <div id="top">
@@ -78,50 +31,29 @@ button:active{background:#333}
   <div>🐭 <span id="ratName">Серая крыса</span></div>
 </div>
 
-<div id="game">
+<div id="rat-wrap">
   <div id="rat"></div>
 </div>
 
 <div id="shop" class="panel">
   <h3>🛒 Магазин</h3>
-
-  <div class="card">
-    ⚡ Энергия +100<br>
-    Цена: 50 💰<br>
-    <button onclick="buyEnergy()">Купить</button>
-  </div>
-
-  <div class="card">
-    🤖 Автокликер +1/сек<br>
-    Цена: 200 💰<br>
-    <button onclick="buyAuto()">Купить</button>
-  </div>
+  <div id="shopCards"></div>
 </div>
 
-<div id="cards" class="panel">
+<div id="cardsPanel" class="panel">
   <h3>🃏 Карточки</h3>
-
-  <div class="card">
-    +1 за тап<br>
-    Цена: 100 💰<br>
-    <button onclick="buyTap()">Купить</button>
-  </div>
-
-  <div class="card">
-    +5 за тап<br>
-    Цена: 500 💰<br>
-    <button onclick="buyBigTap()">Купить</button>
-  </div>
+  <div id="cards"></div>
 </div>
 
 <div id="menu">
-  <button onclick="hide()">🎮</button>
+  <button onclick="hidePanels()">🎮</button>
   <button onclick="show('shop')">🛒</button>
-  <button onclick="show('cards')">🃏</button>
+  <button onclick="show('cardsPanel')">🃏</button>
 </div>
 
 <script>
-const rats=[
+// ─── ДАННЫЕ ───
+const RATS=[
  {name:"Серая крыса", img:"https://i.imgur.com/2yaf2wb.png", need:0},
  {name:"Чёрная крыса", img:"https://i.imgur.com/6X6Jv6s.png", need:1000},
  {name:"Золотая крыса", img:"https://i.imgur.com/m7YQZ9Z.png", need:10000},
@@ -129,86 +61,119 @@ const rats=[
  {name:"Бог крысы", img:"https://i.imgur.com/1u0LQGx.png", need:1000000}
 ];
 
-let state=JSON.parse(localStorage.getItem("ratatok")) || {
+const SHOP=[
+ {id:1,name:"Энергия +100",type:"energy",value:100,price:50,rarity:"common"},
+ {id:2,name:"Автокликер +1/сек",type:"auto",value:1,price:200,rarity:"rare"}
+];
+
+const CARDS=[
+ {id:1,name:"+1 за тап",tap:1,price:100,rarity:"common"},
+ {id:2,name:"+5 за тап",tap:5,price:500,rarity:"rare"},
+ {id:3,name:"+15 пассивно/сек",passive:15,price:2000,rarity:"legendary"}
+];
+
+// ─── СОСТОЯНИЕ ───
+let state=JSON.parse(localStorage.getItem("ratatok"))||{
  coins:0,
  energy:100,
  tap:1,
  auto:0,
- taps:0
+ passive:0,
+ taps:0,
+ cards:{}
 };
 
-const ratEl=document.getElementById("rat");
+// ─── Сохранение ───
+function save(){localStorage.setItem("ratatok",JSON.stringify(state));}
+
+// ─── UI ───
+const coins=document.getElementById("coins");
+const energy=document.getElementById("energy");
 const ratName=document.getElementById("ratName");
+const ratEl=document.getElementById("rat");
+const shopCards=document.getElementById("shopCards");
+const cardsDiv=document.getElementById("cards");
 
-function save(){
- localStorage.setItem("ratatok",JSON.stringify(state));
-}
-
-function update(){
+function updateUI(){
  coins.textContent=state.coins;
  energy.textContent=state.energy;
-
- let current=rats[0];
- rats.forEach(r=>{
-  if(state.taps>=r.need) current=r;
- });
+ // Крыса по тапам
+ let current=RATS[0];
+ RATS.forEach(r=>{if(state.taps>=r.need) current=r});
  ratEl.style.backgroundImage=`url(${current.img})`;
  ratName.textContent=current.name;
-
  save();
 }
 
+// ─── TAP ───
 ratEl.onclick=()=>{
  if(state.energy<=0) return;
  state.energy--;
  state.coins+=state.tap;
  state.taps++;
- update();
+ updateUI();
 };
 
-function buyEnergy(){
- if(state.coins<50) return;
- state.coins-=50;
- state.energy+=100;
- update();
-}
-
-function buyAuto(){
- if(state.coins<200) return;
- state.coins-=200;
- state.auto++;
- update();
-}
-
-function buyTap(){
- if(state.coins<100) return;
- state.coins-=100;
- state.tap+=1;
- update();
-}
-
-function buyBigTap(){
- if(state.coins<500) return;
- state.coins-=500;
- state.tap+=5;
- update();
-}
-
+// ─── АВТОКЛИКЕР ───
 setInterval(()=>{
- state.coins+=state.auto;
- update();
+ state.coins+=state.auto+state.passive;
+ updateUI();
 },1000);
 
-function show(id){
- document.querySelectorAll(".panel").forEach(p=>p.style.display="none");
- document.getElementById(id).style.display="block";
+// ─── МАГАЗИН ───
+function renderShop(){
+ shopCards.innerHTML="";
+ SHOP.forEach(item=>{
+  shopCards.innerHTML+=`
+  <div class="card ${item.rarity}">
+    <b>${item.name}</b><br>
+    Цена: ${item.price} 💰<br>
+    <button onclick="buyShop(${item.id})" ${state.coins<item.price?"disabled":""}>Купить</button>
+  </div>`;
+ });
 }
-function hide(){
- document.querySelectorAll(".panel").forEach(p=>p.style.display="none");
+function buyShop(id){
+ const item=SHOP.find(x=>x.id===id);
+ if(state.coins<item.price) return;
+ state.coins-=item.price;
+ if(item.type=="energy") state.energy+=item.value;
+ if(item.type=="auto") state.auto+=item.value;
+ renderShop();updateUI();
 }
+renderShop();
 
-update();
+// ─── КАРТОЧКИ ───
+function renderCards(){
+ cardsDiv.innerHTML="";
+ CARDS.forEach(c=>{
+  const lvl=state.cards[c.id]||0;
+  const price=c.price*(lvl+1);
+  cardsDiv.innerHTML+=`
+  <div class="card ${c.rarity}">
+    <b>${c.name}</b><br>
+    ${c.tap?`+${c.tap} за тап`:`+${c.passive}/сек`} • ур ${lvl}<br>
+    <button onclick="buyCard(${c.id})" ${state.coins<price?"disabled":""}>Купить (${price}💰)</button>
+  </div>`;
+ });
+}
+function buyCard(id){
+ const c=CARDS.find(x=>x.id===id);
+ const lvl=state.cards[id]||0;
+ const price=c.price*(lvl+1);
+ if(state.coins<price) return;
+ state.coins-=price;
+ state.cards[id]=lvl+1;
+ if(c.tap) state.tap+=c.tap;
+ if(c.passive) state.passive+=c.passive;
+ renderCards();updateUI();
+}
+renderCards();
+
+// ─── ПАНЕЛИ ───
+function show(id){document.querySelectorAll(".panel").forEach(p=>p.style.display="none");document.getElementById(id).style.display="block"}
+function hidePanels(){document.querySelectorAll(".panel").forEach(p=>p.style.display="none")}
+
+updateUI();
 </script>
-
 </body>
 </html>
