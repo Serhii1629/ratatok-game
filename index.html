@@ -26,6 +26,7 @@ body{
 #game{
   height:32vh;
   display:flex;
+  flex-direction:column;
   justify-content:center;
   align-items:center;
 }
@@ -35,17 +36,43 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
+  position:relative;
 }
 #rat{
-  width:100%;
-  height:100%;
-  font-size:120px;
+  width:120px;
+  height:120px;
+  font-size:80px;
   display:flex;
   justify-content:center;
   align-items:center;
-  transition:transform .08s ease;
+  border-radius:50%;
+  border:4px solid #555;
+  transition:transform .08s ease, border-color .3s ease, box-shadow .3s ease;
 }
 #rat.tap{ transform:scale(1.08); }
+
+/* RAT LABEL */
+#ratLabel{
+  margin-top:10px;
+  text-align:center;
+  font-size:16px;
+}
+
+/* rarity borders */
+.common{border-color:#555;}
+.rare{border-color:#3b82f6;}
+.legendary{
+  border-color:gold;
+  box-shadow:0 0 15px gold;
+  animation: glow 1.5s infinite alternate;
+}
+
+/* glow animation for legendary */
+@keyframes glow {
+  0% { box-shadow:0 0 10px gold; }
+  50% { box-shadow:0 0 25px gold; }
+  100% { box-shadow:0 0 10px gold; }
+}
 
 /* MENU */
 #menu{
@@ -118,12 +145,14 @@ body{
   <div>⚡ <span id="energy"></span></div>
   <div>💰 <span id="coins"></span></div>
   <div>⭐ <span id="level"></span></div>
+  <div>👆 <span id="taps"></span></div>
 </div>
 
 <div id="game">
   <div id="rat-wrap">
-    <div id="rat"></div>
+    <div id="rat" class="common"></div>
   </div>
+  <div id="ratLabel">Крыса #1<br>Следующая: 1 000 тапов</div>
 </div>
 
 <div id="cardsPanel" class="panel hidden">
@@ -143,12 +172,19 @@ body{
 </div>
 
 <script>
-/* ─── RATS ─── */
-const RATS = [
- {id:1,name:"Серая крыса",emoji:"🐀",rarity:"common",unlock:1},
- {id:2,name:"Чёрная крыса",emoji:"🐁",rarity:"rare",unlock:4},
- {id:3,name:"Золотая крыса",emoji:"🐭",rarity:"legendary",unlock:8}
+/* ─── BASE RAT DATA ─── */
+const BASE_RATS = [
+  {emoji:"🐀"},
+  {emoji:"🐁"},
+  {emoji:"🐭"},
+  {emoji:"🐹"},
+  {emoji:"🐰"},
+  {emoji:"🦝"},
+  {emoji:"🦡"},
+  {emoji:"🦨"}
 ];
+
+const RARITIES = ["common","rare","legendary"];
 
 /* ─── CARDS ─── */
 const CARDS=[
@@ -176,7 +212,8 @@ const state = JSON.parse(localStorage.getItem("ratatok")) || {
  passive:0,
  cards:{},
  nfts:[],
- lastTime:Date.now()
+ lastTime:Date.now(),
+ taps:0
 };
 
 /* ─── SAVE ─── */
@@ -185,20 +222,34 @@ function save(){
 }
 
 /* ─── UI ─── */
-const coinsEl=coins, energyEl=energy, levelEl=level;
+const coinsEl=coins, energyEl=energy, levelEl=level, tapsEl=taps;
+const ratLabelEl = document.getElementById("ratLabel");
 function updateUI(){
  coinsEl.textContent=state.coins;
  energyEl.textContent=state.energy;
  levelEl.textContent=state.level;
+ tapsEl.textContent=state.taps;
  save();
 }
 updateUI();
 
-/* ─── RAT CHANGE BY LEVEL ─── */
+/* ─── GENERATE RAT BASED ON TAPS ─── */
+function getRatForTaps(taps){
+  const index = Math.floor(Math.log10(Math.max(taps,1)));
+  const emoji = BASE_RATS[index % BASE_RATS.length].emoji;
+  const rarity = RARITIES[index % RARITIES.length];
+  const nextTap = Math.pow(10, index + 1);
+  return {emoji, rarity, number: index + 1, nextTap};
+}
+
+/* ─── UPDATE RAT DISPLAY ─── */
 function updateRat(){
- const rat = RATS.filter(r => r.unlock <= state.level).pop();
- const ratEl = document.getElementById("rat");
- ratEl.textContent = rat.emoji;
+  const rat = getRatForTaps(state.taps);
+  const ratEl = document.getElementById("rat");
+  ratEl.textContent = rat.emoji;
+  ratEl.classList.remove("common","rare","legendary");
+  ratEl.classList.add(rat.rarity);
+  ratLabelEl.innerHTML = `Крыса #${rat.number}<br>Следующая: ${rat.nextTap.toLocaleString()} тапов`;
 }
 updateRat();
 
@@ -210,8 +261,10 @@ function tap(){
  if(state.energy<=0) return;
  state.energy--;
  state.coins+=state.tapPower;
+ state.taps++;
  ratEl.classList.add("tap");
  setTimeout(()=>ratEl.classList.remove("tap"),80);
+ updateRat();
  checkLevel();
  updateUI();
 }
@@ -224,7 +277,6 @@ function checkLevel(){
  const need=state.level*500;
  if(state.coins>=need){
   state.level++;
-  updateRat();
   // NFT награда
   if(state.level===5 && !state.nfts.includes(1)) state.nfts.push(1);
   if(state.level===10 && !state.nfts.includes(2)) state.nfts.push(2);
