@@ -104,6 +104,19 @@ const nftsEl=document.getElementById("nfts");
 const progressFill=document.getElementById("progressFill");
 const airdropContainer=document.getElementById("airdropContainer");
 
+// Плавное обновление UI
+let pendingUpdate = false;
+function scheduleUpdate(){
+  if(!pendingUpdate){
+    pendingUpdate = true;
+    requestAnimationFrame(()=>{
+      updateRat();
+      updateUI();
+      pendingUpdate = false;
+    });
+  }
+}
+
 function updateUI(){
  coinsEl.textContent=state.coins;
  energyEl.textContent=state.energy;
@@ -137,9 +150,8 @@ function tap(){
  state.taps++;
  ratEl.classList.add("tap");
  setTimeout(()=>ratEl.classList.remove("tap"),80);
- updateRat();
+ scheduleUpdate();
  checkLevel();
- updateUI();
 }
 
 ratEl.parentElement.onclick=tap;
@@ -163,23 +175,26 @@ function triggerAirDrop(amount){
  airdropContainer.appendChild(div);
  state.coins += amount;
 setTimeout(()=>div.remove(),2000);
-updateUI();
+scheduleUpdate();
 }
 
+// Пассивное начисление
 setInterval(()=>{
  const now=Date.now();
  const sec=Math.floor((now-state.lastTime)/1000);
  if(sec>0){
   state.coins+=state.passive*sec;
   state.lastTime=now;
-  updateUI();
+  scheduleUpdate();
  }
 },1000);
 
 // Автокликер
 setInterval(()=>{
   const autoClicks=state.cards[8]||0; 
-  for(let i=0;i<autoClicks;i++){ tap(); }
+  if(autoClicks>0){
+    for(let i=0;i<autoClicks;i++) tap();
+  }
 },1000);
 
 function renderCards(){
@@ -207,7 +222,7 @@ function buyCard(id){
  if(c.passive) state.passive+=c.passive;
  if(c.energy) state.energy += c.energy;
  renderCards();
- updateUI();
+ scheduleUpdate();
 }
 
 renderCards();
