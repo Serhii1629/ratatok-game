@@ -13,8 +13,6 @@ body{
   color:#fff;
   font-family:Arial,sans-serif;
 }
-
-/* TOP */
 #top{
   display:flex;
   justify-content:space-around;
@@ -22,27 +20,21 @@ body{
   background:#111;
   font-weight:bold;
 }
-
-/* TAP */
-#tap-area{
-  height:55vh;
+#tapArea{
+  height:45vh;
   display:flex;
   justify-content:center;
   align-items:center;
 }
-
 #rat{
   width:260px;
   height:260px;
   background-size:contain;
   background-repeat:no-repeat;
   background-position:center;
-  border-radius:20px;
-  transition:transform .08s;
+  transition:.08s;
 }
 #rat:active{transform:scale(1.1)}
-
-/* MENU */
 #menu{
   position:fixed;
   bottom:0;
@@ -53,29 +45,23 @@ button{
   flex:1;
   padding:14px;
   background:#1c1c28;
-  border:none;
   color:#fff;
-  font-size:14px;
+  border:none;
 }
-button:disabled{opacity:.4}
-
-/* PANELS */
 .panel{
   display:none;
   position:fixed;
   bottom:52px;
   width:100%;
-  max-height:50vh;
+  max-height:45vh;
   overflow:auto;
   background:#14141c;
   padding:10px;
 }
-
-/* CARDS */
 .card{
   background:#1e1e2c;
-  border-radius:12px;
   padding:10px;
+  border-radius:12px;
   margin-bottom:8px;
 }
 .common{border:2px solid #555}
@@ -87,12 +73,12 @@ button:disabled{opacity:.4}
 <body>
 
 <div id="top">
-  <div>Coins: <span id="coins">0</span></div>
-  <div>Energy: <span id="energy">100</span></div>
-  <div>Level: <span id="level">1</span></div>
+  <div>💰 <span id="coins">0</span></div>
+  <div>⚡ <span id="energy">100</span></div>
+  <div>⭐ <span id="level">1</span></div>
 </div>
 
-<div id="tap-area">
+<div id="tapArea">
   <div id="rat"></div>
 </div>
 
@@ -112,10 +98,10 @@ button:disabled{opacity:.4}
 </div>
 
 <div id="menu">
-  <button onclick="hide()">GAME</button>
-  <button onclick="show('shop')">SHOP</button>
-  <button onclick="show('cards')">CARDS</button>
-  <button onclick="show('ref')">REF</button>
+  <button onclick="hide()">🎮</button>
+  <button onclick="show('shop')">🛒</button>
+  <button onclick="show('cards')">🃏</button>
+  <button onclick="show('ref')">🔗</button>
 </div>
 
 <script>
@@ -129,46 +115,53 @@ const RATS=[
 ];
 
 /* ---------- ДАННЫЕ ---------- */
-let state=JSON.parse(localStorage.getItem("ratatok"))||{
+let state=JSON.parse(localStorage.getItem("ratatok_full"))||{
  coins:0,
  energy:100,
- tap:1,
- auto:0,
- taps:0,
  level:1,
+ taps:0,
+ tapPower:1,
+ auto:0,
  cards:{},
  ref:false
 };
 
-function save(){localStorage.setItem("ratatok",JSON.stringify(state))}
+function save(){localStorage.setItem("ratatok_full",JSON.stringify(state))}
 
 /* ---------- UI ---------- */
-const rat=document.getElementById("rat");
-const coinsEl=coins,energyEl=energy,levelEl=level;
+const coinsEl=coins,energyEl=energy,levelEl=level,ratEl=document.getElementById("rat");
+
+function currentRat(){
+ let r=RATS[0];
+ for(const x of RATS) if(state.taps>=x.need) r=x;
+ return r;
+}
 
 function update(){
  coinsEl.textContent=state.coins;
- energyEl.textContent=state.energy;
+ energyEl.textContent=Math.floor(state.energy);
  levelEl.textContent=state.level;
-
- let r=RATS[0];
- for(let x of RATS) if(state.taps>=x.need) r=x;
- rat.style.backgroundImage=`url(${r.img})`;
-
+ ratEl.style.backgroundImage=`url(${currentRat().img})`;
  save();
 }
 
 /* ---------- TAP ---------- */
-rat.onclick=()=>{
- if(state.energy<=0) return;
+ratEl.onclick=()=>{
+ if(state.energy<1) return;
  state.energy--;
- state.coins+=state.tap;
+ state.coins+=state.tapPower;
  state.taps++;
  if(state.taps>=state.level*1000) state.level++;
  update();
 };
 
-/* ---------- AUTO ---------- */
+/* ---------- ЭНЕРГИЯ ---------- */
+setInterval(()=>{
+ if(state.energy<100) state.energy+=0.5;
+ update();
+},1000);
+
+/* ---------- АВТОКЛИК ---------- */
 setInterval(()=>{
  if(state.auto>0){
   state.coins+=state.auto;
@@ -176,10 +169,10 @@ setInterval(()=>{
  }
 },1000);
 
-/* ---------- SHOP ---------- */
+/* ---------- МАГАЗИН ---------- */
 const SHOP=[
- {id:1,name:"+50 Energy",price:50,energy:50},
- {id:2,name:"Autoclick +1",price:300,auto:1}
+ {id:1,name:"+50 энергии",price:100,energy:50},
+ {id:2,name:"Автоклик +1",price:300,auto:1}
 ];
 
 function renderShop(){
@@ -187,26 +180,27 @@ function renderShop(){
  SHOP.forEach(i=>{
   shopItems.innerHTML+=`
   <div class="card common">
-   ${i.name}<br>Цена ${i.price}
-   <button onclick="buyShop(${i.id})" ${state.coins<i.price?"disabled":""}>Buy</button>
+   ${i.name}<br>${i.price} 💰
+   <button ${state.coins<i.price?"disabled":""}
+    onclick="buyShop(${i.id})">Купить</button>
   </div>`;
  });
 }
 
 function buyShop(id){
- let i=SHOP.find(x=>x.id==id);
+ let i=SHOP.find(x=>x.id===id);
  if(state.coins<i.price) return;
  state.coins-=i.price;
  if(i.energy) state.energy+=i.energy;
  if(i.auto) state.auto+=i.auto;
- update();
- renderShop();
+ update();renderShop();
 }
 
-/* ---------- CARDS ---------- */
+/* ---------- КАРТОЧКИ ---------- */
 const CARDS=[
- {id:1,name:"+1 tap",price:100,tap:1,rarity:"common"},
- {id:2,name:"+5 tap",price:500,tap:5,rarity:"rare"}
+ {id:1,name:"+1 за тап",price:100,tap:1,rarity:"common"},
+ {id:2,name:"+5 за тап",price:500,tap:5,rarity:"rare"},
+ {id:3,name:"+10 автоклик",price:2000,auto:10,rarity:"legendary"}
 ];
 
 function renderCards(){
@@ -216,52 +210,47 @@ function renderCards(){
   let price=c.price*(lvl+1);
   cardItems.innerHTML+=`
   <div class="card ${c.rarity}">
-   ${c.name} lvl ${lvl}<br>${price}
-   <button onclick="buyCard(${c.id})" ${state.coins<price?"disabled":""}>Buy</button>
+   ${c.name} (ур ${lvl})<br>${price} 💰
+   <button ${state.coins<price?"disabled":""}
+    onclick="buyCard(${c.id})">Купить</button>
   </div>`;
  });
 }
 
 function buyCard(id){
- let c=CARDS.find(x=>x.id==id);
+ let c=CARDS.find(x=>x.id===id);
  let lvl=state.cards[id]||0;
  let price=c.price*(lvl+1);
  if(state.coins<price) return;
  state.coins-=price;
  state.cards[id]=lvl+1;
- state.tap+=c.tap;
- update();
- renderCards();
+ if(c.tap) state.tapPower+=c.tap;
+ if(c.auto) state.auto+=c.auto;
+ update();renderCards();
 }
 
-/* ---------- REF ---------- */
-let code=localStorage.getItem("refCode");
-if(!code){
- code=Math.random().toString(36).slice(2,8);
- localStorage.setItem("refCode",code);
+/* ---------- РЕФ ---------- */
+let refCode=localStorage.getItem("refCode");
+if(!refCode){
+ refCode=Math.random().toString(36).slice(2,8);
+ localStorage.setItem("refCode",refCode);
 }
-refLink.textContent=location.origin+location.pathname+"?ref="+code;
+refLink.textContent=location.origin+location.pathname+"?ref="+refCode;
 
-const url=new URLSearchParams(location.search);
-if(url.get("ref")&&!state.ref){
- state.coins+=300;
+let p=new URLSearchParams(location.search);
+if(p.get("ref")&&!state.ref){
+ state.coins+=500;
  state.ref=true;
- alert("Реферальный бонус +300");
+ alert("Реферальный бонус +500");
 }
 
 /* ---------- PANELS ---------- */
-function show(id){
- hide();
- document.getElementById(id).style.display="block";
-}
-function hide(){
- document.querySelectorAll(".panel").forEach(p=>p.style.display="none");
-}
+function show(id){hide();document.getElementById(id).style.display="block";}
+function hide(){document.querySelectorAll(".panel").forEach(p=>p.style.display="none");}
 
 /* ---------- INIT ---------- */
-renderShop();
-renderCards();
-update();
+renderShop();renderCards();update();
 </script>
+
 </body>
 </html>
