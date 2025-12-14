@@ -2,14 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RATATOK</title>
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial, sans-serif;}
-#top{display:flex;justify-content:space-between;padding:12px;font-size:15px;}
+body{margin:0;font-family:Arial,sans-serif;background:#0b0b0f;color:#fff;}
+#top{display:flex;justify-content:space-between;padding:12px;font-size:16px;}
 #game{height:35vh;display:flex;flex-direction:column;justify-content:center;align-items:center;}
-#rat-wrap{width:220px;height:220px;display:flex;justify-content:center;align-items:center;position:relative;}
+#rat-wrap{width:220px;height:220px;display:flex;justify-content:center;align-items:center;position:relative;cursor:pointer;}
 #rat{width:120px;height:120px;font-size:80px;display:flex;justify-content:center;align-items:center;border-radius:50%;border:4px solid #555;transition:transform .08s ease,border-color .3s ease,box-shadow .3s ease;}
 #rat.tap{transform:scale(1.08);}
 #ratLabel{margin-top:10px;text-align:center;font-size:16px;}
@@ -32,15 +31,15 @@ body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial, sans-serif;}
 <body>
 
 <div id="top">
-  <div>⚡ <span id="energy"></span></div>
-  <div>💰 <span id="coins"></span></div>
-  <div>⭐ <span id="level"></span></div>
-  <div>👆 <span id="taps"></span></div>
+  <div>⚡ <span id="energy">0</span></div>
+  <div>💰 <span id="coins">0</span></div>
+  <div>⭐ <span id="level">1</span></div>
+  <div>👆 <span id="taps">0</span></div>
 </div>
 
 <div id="game">
   <div id="rat-wrap">
-    <div id="rat" class="common"></div>
+    <div id="rat" class="common">🐀</div>
   </div>
   <div id="ratLabel">Крыса #1<br>Следующая: 1 000 тапов</div>
 </div>
@@ -86,8 +85,14 @@ const state = JSON.parse(localStorage.getItem("ratatok"))||{
 
 function save(){localStorage.setItem("ratatok",JSON.stringify(state));}
 
-const coinsEl=coins,energyEl=energy,levelEl=level,tapsEl=taps;
+const coinsEl=document.getElementById("coins");
+const energyEl=document.getElementById("energy");
+const levelEl=document.getElementById("level");
+const tapsEl=document.getElementById("taps");
 const ratLabelEl=document.getElementById("ratLabel");
+const ratEl=document.getElementById("rat");
+const cardsEl=document.getElementById("cards");
+const nftsEl=document.getElementById("nfts");
 
 function updateUI(){
  coinsEl.textContent=state.coins;
@@ -96,7 +101,6 @@ function updateUI(){
  tapsEl.textContent=state.taps;
  save();
 }
-updateUI();
 
 function getRatForTaps(taps){
   const index=Math.floor(Math.log10(Math.max(taps,1)));
@@ -108,16 +112,11 @@ function getRatForTaps(taps){
 
 function updateRat(){
   const rat=getRatForTaps(state.taps);
-  const ratEl=document.getElementById("rat");
   ratEl.textContent=rat.emoji;
   ratEl.classList.remove("common","rare","legendary");
   ratEl.classList.add(rat.rarity);
   ratLabelEl.innerHTML=`Крыса #${rat.number}<br>Следующая: ${rat.nextTap.toLocaleString()} тапов`;
 }
-updateRat();
-
-const ratWrap=document.getElementById("rat-wrap");
-const ratEl=document.getElementById("rat");
 
 function tap(){
  if(state.energy<=0) return;
@@ -131,8 +130,8 @@ function tap(){
  updateUI();
 }
 
-ratWrap.onclick=tap;
-ratWrap.ontouchstart=e=>{e.preventDefault();tap();}
+ratEl.parentElement.onclick=tap;
+ratEl.parentElement.ontouchstart=e=>{e.preventDefault();tap();}
 
 function checkLevel(){
  const need=state.level*500;
@@ -155,11 +154,11 @@ setInterval(()=>{
 },1000);
 
 function renderCards(){
- cards.innerHTML="";
+ cardsEl.innerHTML="";
  CARDS.forEach(c=>{
   const lvl=state.cards[c.id]||0;
   const price=c.price*(lvl+1);
-  cards.innerHTML+=`
+  cardsEl.innerHTML+=`
    <div class="card ${c.rarity}">
     <b>${c.name}</b><br>
     <small>${c.tap?`+${c.tap} за тап`:`+${c.passive}/сек`} • ур ${lvl}</small>
@@ -167,6 +166,7 @@ function renderCards(){
    </div>`;
  });
 }
+
 function buyCard(id){
  const c=CARDS.find(x=>x.id===id);
  const lvl=state.cards[id]||0;
@@ -176,17 +176,20 @@ function buyCard(id){
  state.cards[id]=lvl+1;
  if(c.tap) state.tapPower+=c.tap;
  if(c.passive) state.passive+=c.passive;
- renderCards();updateUI();
+ renderCards();
+ updateUI();
 }
+
 renderCards();
 
 function renderNFTs(){
- nfts.innerHTML="";
+ nftsEl.innerHTML="";
  state.nfts.forEach(id=>{
   const n=NFTS.find(x=>x.id===id);
-  nfts.innerHTML+=`<div class="nft"><img src="${n.img}" width="80"><br>${n.name}</div>`;
+  nftsEl.innerHTML+=`<div class="nft"><img src="${n.img}" width="80"><br>${n.name}</div>`;
  });
 }
+
 renderNFTs();
 
 function show(id){
@@ -196,6 +199,10 @@ function show(id){
 function hidePanels(){
  document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
 }
+
+updateRat();
+updateUI();
 </script>
+
 </body>
 </html>
