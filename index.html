@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RATATOK NFT PRO</title>
+<title>RATATOK Clicker</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0b0b0f;color:#fff;font-family:Arial,sans-serif}
@@ -21,7 +21,6 @@ button:active{background:#333}
 .legendary{border:2px solid gold;box-shadow:0 0 10px gold}
 .rare{border:2px solid #3b82f6}
 .common{border:2px solid #555}
-.nft{background:#1e1e2c;border-radius:12px;padding:10px;text-align:center;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -46,23 +45,10 @@ button:active{background:#333}
   <div id="cards"></div>
 </div>
 
-<div id="nftPanel" class="panel">
-  <h3>🖼 NFT Награды</h3>
-  <div id="nfts"></div>
-</div>
-
-<div id="refPanel" class="panel">
-  <h3>🔗 Реферальная ссылка</h3>
-  <input type="text" id="refLink" readonly style="width:100%;padding:6px;border-radius:6px;border:none;background:#2c2c44;color:#fff">
-  <button onclick="claimReferral()">Получить AirDrop</button>
-</div>
-
 <div id="menu">
   <button onclick="hidePanels()">🎮</button>
   <button onclick="show('shop')">🛒</button>
   <button onclick="show('cardsPanel')">🃏</button>
-  <button onclick="show('nftPanel')">🖼</button>
-  <button onclick="show('refPanel')">🔗</button>
 </div>
 
 <script>
@@ -83,14 +69,7 @@ const SHOP=[
 const CARDS=[
  {id:1,name:"+1 за тап",tap:1,price:100,rarity:"common"},
  {id:2,name:"+5 за тап",tap:5,price:500,rarity:"rare"},
- {id:3,name:"+15 пассивно/сек",passive:15,price:2000,rarity:"legendary"},
- {id:4,name:"+50 пассивно/сек",passive:50,price:10000,rarity:"legendary"}
-];
-
-const NFTS=[
- {id:1,name:"NFT Серая",img:"https://i.imgur.com/2yaf2wb.png",unlock:1000},
- {id:2,name:"NFT Золотая",img:"https://i.imgur.com/m7YQZ9Z.png",unlock:10000},
- {id:3,name:"NFT Демоническая",img:"https://i.imgur.com/8QfZKkL.png",unlock:100000}
+ {id:3,name:"+15 пассивно/сек",passive:15,price:2000,rarity:"legendary"}
 ];
 
 // ─── СОСТОЯНИЕ ───
@@ -101,9 +80,7 @@ let state=JSON.parse(localStorage.getItem("ratatok"))||{
  auto:0,
  passive:0,
  taps:0,
- cards:{},
- nfts:[],
- refClaimed:false
+ cards:{}
 };
 
 // ─── Сохранение ───
@@ -116,26 +93,15 @@ const ratName=document.getElementById("ratName");
 const ratEl=document.getElementById("rat");
 const shopCards=document.getElementById("shopCards");
 const cardsDiv=document.getElementById("cards");
-const nftsDiv=document.getElementById("nfts");
-const refLinkInput=document.getElementById("refLink");
 
 function updateUI(){
  coins.textContent=state.coins;
  energy.textContent=state.energy;
-
  // Крыса по тапам
  let current=RATS[0];
  RATS.forEach(r=>{if(state.taps>=r.need) current=r});
  ratEl.textContent=current.icon;
  ratName.textContent=current.name;
-
- // NFT
- renderNFTs();
-
- // Реферальная ссылка
- if(!localStorage.getItem("ref")) localStorage.setItem("ref","me");
- refLinkInput.value=window.location.href+"?ref="+localStorage.getItem("ref");
-
  save();
 }
 
@@ -202,33 +168,6 @@ function buyCard(id){
  renderCards();updateUI();
 }
 renderCards();
-
-// ─── NFT ───
-function renderNFTs(){
- nftsDiv.innerHTML="";
- NFTS.forEach(n=>{
-  if(state.taps>=n.unlock && !state.nfts.includes(n.id)) state.nfts.push(n.id);
- });
- state.nfts.forEach(id=>{
-  const n=NFTS.find(x=>x.id===id);
-  nftsDiv.innerHTML+=`
-  <div class="nft">
-    <img src="${n.img}" width="80"><br>${n.name}
-  </div>`;
- });
-}
-
-// ─── AirDrop через реферальную ссылку ───
-function claimReferral(){
- const urlParams=new URLSearchParams(window.location.search);
- const ref=urlParams.get("ref");
- if(ref && !state.refClaimed){
-  state.coins+=500; // награда за реферала
-  state.refClaimed=true;
-  alert("AirDrop получен! +500 💰");
-  updateUI();
-} else alert("AirDrop уже получен или нет ссылки");
-}
 
 // ─── ПАНЕЛИ ───
 function show(id){document.querySelectorAll(".panel").forEach(p=>p.style.display="none");document.getElementById(id).style.display="block"}
