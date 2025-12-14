@@ -3,195 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RATATOK Tapper</title>
+<title>RATATOK</title>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0b0b0f;color:#fff;font-family:Arial,sans-serif}
+body{margin:0;font-family:Arial;background:#0b0b0f;color:#fff}
 #top{display:flex;justify-content:space-around;padding:10px;background:#111}
-#rat-wrap{display:flex;justify-content:center;align-items:center;height:40vh}
-#rat{width:220px;height:220px;font-size:100px;text-align:center;line-height:220px;cursor:pointer;transition:transform .1s;}
-#rat:active{transform:scale(1.1)}
+#tapArea{display:flex;justify-content:center;align-items:center;height:45vh}
+#rat{font-size:120px;cursor:pointer;user-select:none}
 #menu{position:fixed;bottom:0;width:100%;display:flex}
-button{flex:1;padding:14px;background:#1c1c28;border:none;color:#fff;font-size:14px;cursor:pointer}
-button:active{background:#333}
-.panel{position:fixed;bottom:52px;width:100%;max-height:50vh;background:#14141c;overflow:auto;padding:10px;display:none}
+button{flex:1;padding:14px;border:none;background:#1c1c28;color:#fff}
+.panel{display:none;position:fixed;bottom:52px;width:100%;max-height:50vh;overflow:auto;background:#14141c;padding:10px}
 .card{background:#1e1e2c;padding:10px;border-radius:10px;margin-bottom:8px}
-.card button{width:100%;padding:6px;border:none;border-radius:6px;background:#2c2c44;color:#fff}
-.card button:disabled{opacity:.4}
-.legendary{border:2px solid gold;box-shadow:0 0 10px gold}
-.rare{border:2px solid #3b82f6}
-.common{border:2px solid #555}
+.card button{width:100%;margin-top:6px}
 </style>
 </head>
+
 <body>
 
 <div id="top">
   <div>💰 <span id="coins">0</span></div>
   <div>⚡ <span id="energy">100</span></div>
-  <div>🐭 <span id="ratName">Серая крыса</span></div>
+  <div>⭐ <span id="level">1</span></div>
 </div>
 
-<div id="rat-wrap">
+<div id="tapArea">
   <div id="rat">🐭</div>
 </div>
 
 <div id="shop" class="panel">
   <h3>🛒 Магазин</h3>
-  <div id="shopCards"></div>
+  <div id="shopItems"></div>
 </div>
 
-<div id="cardsPanel" class="panel">
+<div id="cards" class="panel">
   <h3>🃏 Карточки</h3>
-  <div id="cards"></div>
+  <div id="cardItems"></div>
 </div>
 
-<div id="refPanel" class="panel">
-  <h3>🔗 Реферальная система</h3>
-  <button onclick="claimReferral()">Получить бонус</button>
+<div id="ref" class="panel">
+  <h3>🔗 Реферальная ссылка</h3>
+  <input id="refLink" style="width:100%;padding:6px" readonly>
 </div>
 
 <div id="menu">
-  <button onclick="hidePanels()">🎮</button>
+  <button onclick="hide()">🎮</button>
   <button onclick="show('shop')">🛒</button>
-  <button onclick="show('cardsPanel')">🃏</button>
-  <button onclick="show('refPanel')">🔗</button>
+  <button onclick="show('cards')">🃏</button>
+  <button onclick="show('ref')">🔗</button>
 </div>
 
 <script>
-// ─── ДАННЫЕ ───
-const RATS=[
- {name:"Серая крыса", icon:"🐭", need:0},
- {name:"Чёрная крыса", icon:"🖤", need:1000},
- {name:"Золотая крыса", icon:"🐀", need:10000},
- {name:"Демоническая крыса", icon:"👹", need:100000},
- {name:"Бог крысы", icon:"👑", need:1000000}
+// ---------- КРЫСЫ ПО УРОВНЯМ ----------
+const RATS = [
+ {lvl:1, icon:"🐭"},
+ {lvl:2, icon:"🐀"},
+ {lvl:3, icon:"🖤"},
+ {lvl:4, icon:"👹"},
+ {lvl:5, icon:"👑"}
 ];
 
-const SHOP=[
- {id:1,name:"Энергия +100",type:"energy",value:100,price:50,rarity:"common"},
- {id:2,name:"Автокликер +1/сек",type:"auto",value:1,price:200,rarity:"rare"}
+// ---------- КАРТОЧКИ ----------
+const CARDS = [
+ {id:1,name:"+1 за тап",tap:1,price:50},
+ {id:2,name:"+3 за тап",tap:3,price:200},
+ {id:3,name:"+1 автоклик",auto:1,price:300},
+ {id:4,name:"+5 автоклик",auto:5,price:1200},
+ {id:5,name:"+20 автоклик",auto:20,price:5000}
 ];
 
-const CARDS=[
- {id:1,name:"+1 за тап",tap:1,price:100,rarity:"common"},
- {id:2,name:"+5 за тап",tap:5,price:500,rarity:"rare"},
- {id:3,name:"+15 пассивно/сек",passive:15,price:2000,rarity:"legendary"},
- {id:4,name:"+50 пассивно/сек",passive:50,price:10000,rarity:"legendary"},
- {id:5,name:"+100 пассивно/сек",passive:100,price:50000,rarity:"legendary"}
+// ---------- МАГАЗИН ----------
+const SHOP = [
+ {id:1,name:"Энергия +50",energy:50,price:30}
 ];
 
-// ─── СОСТОЯНИЕ ───
-let state=JSON.parse(localStorage.getItem("ratatok"))||{
+// ---------- СОСТОЯНИЕ ----------
+let state = JSON.parse(localStorage.getItem("ratatok")) || {
  coins:0,
  energy:100,
  tap:1,
  auto:0,
- passive:0,
+ level:1,
  taps:0,
- cards:{},
- refClaimed:false
+ cards:{}
 };
 
-// ─── Сохранение ───
-function save(){localStorage.setItem("ratatok",JSON.stringify(state));}
-
-// ─── UI ───
-const coins=document.getElementById("coins");
-const energy=document.getElementById("energy");
-const ratName=document.getElementById("ratName");
-const ratEl=document.getElementById("rat");
-const shopCards=document.getElementById("shopCards");
-const cardsDiv=document.getElementById("cards");
+// ---------- UI ----------
+const coinsEl=coins, energyEl=energy, levelEl=level, ratEl=rat;
 
 function updateUI(){
- coins.textContent=state.coins;
- energy.textContent=state.energy;
- let current=RATS[0];
- RATS.forEach(r=>{if(state.taps>=r.need) current=r});
- ratEl.textContent=current.icon;
- ratName.textContent=current.name;
- renderShop();
- renderCards();
- save();
+ coinsEl.textContent = state.coins;
+ energyEl.textContent = state.energy;
+ levelEl.textContent = state.level;
+
+ let rat = RATS[Math.min(state.level-1, RATS.length-1)];
+ ratEl.textContent = rat.icon;
+
+ localStorage.setItem("ratatok",JSON.stringify(state));
 }
 
-// ─── TAP ───
-ratEl.onclick=()=>{
+// ---------- ТАП ----------
+ratEl.onclick = ()=>{
  if(state.energy<=0) return;
  state.energy--;
- state.coins+=state.tap;
+ state.coins += state.tap;
  state.taps++;
+
+ if(state.taps >= state.level*100){
+   state.level++;
+ }
+
  updateUI();
 };
 
-// ─── АВТОКЛИКЕР / ПАССИВНОЕ начисление ───
+// ---------- АВТОКЛИК ----------
 setInterval(()=>{
- state.coins+=state.auto + state.passive;
- updateUI();
+ if(state.auto>0){
+   state.coins += state.auto;
+   updateUI();
+ }
 },1000);
 
-// ─── МАГАЗИН ───
+// ---------- МАГАЗИН ----------
 function renderShop(){
- shopCards.innerHTML="";
- SHOP.forEach(item=>{
-  shopCards.innerHTML+=`
-  <div class="card ${item.rarity}">
-    <b>${item.name}</b><br>
-    Цена: ${item.price} 💰<br>
-    <button onclick="buyShop(${item.id})" ${state.coins<item.price?"disabled":""}>Купить</button>
-  </div>`;
+ shopItems.innerHTML="";
+ SHOP.forEach(i=>{
+  shopItems.innerHTML+=`
+   <div class="card">
+    ${i.name}<br>
+    Цена: ${i.price}
+    <button onclick="buyShop(${i.id})">Купить</button>
+   </div>`;
  });
 }
 function buyShop(id){
- const item=SHOP.find(x=>x.id===id);
- if(state.coins<item.price) return;
- state.coins-=item.price;
- if(item.type=="energy") state.energy+=item.value;
- if(item.type=="auto") state.auto+=item.value;
- renderShop();updateUI();
+ let i=SHOP.find(x=>x.id===id);
+ if(state.coins<i.price) return;
+ state.coins-=i.price;
+ state.energy+=i.energy;
+ updateUI();
 }
 
-// ─── КАРТОЧКИ ───
+// ---------- КАРТОЧКИ ----------
 function renderCards(){
- cardsDiv.innerHTML="";
+ cardItems.innerHTML="";
  CARDS.forEach(c=>{
-  const lvl=state.cards[c.id]||0;
-  const price=c.price*(lvl+1);
-  cardsDiv.innerHTML+=`
-  <div class="card ${c.rarity}">
-    <b>${c.name}</b><br>
-    ${c.tap?`+${c.tap} за тап`:`+${c.passive}/сек`} • ур ${lvl}<br>
-    <button onclick="buyCard(${c.id})" ${state.coins<price?"disabled":""}>Купить (${price}💰)</button>
-  </div>`;
+  let lvl=state.cards[c.id]||0;
+  let price=c.price*(lvl+1);
+  cardItems.innerHTML+=`
+   <div class="card">
+    ${c.name} (ур ${lvl})<br>
+    Цена: ${price}
+    <button onclick="buyCard(${c.id})">Купить</button>
+   </div>`;
  });
 }
 function buyCard(id){
- const c=CARDS.find(x=>x.id===id);
- const lvl=state.cards[id]||0;
- const price=c.price*(lvl+1);
+ let c=CARDS.find(x=>x.id===id);
+ let lvl=state.cards[id]||0;
+ let price=c.price*(lvl+1);
  if(state.coins<price) return;
+
  state.coins-=price;
  state.cards[id]=lvl+1;
  if(c.tap) state.tap+=c.tap;
- if(c.passive) state.passive+=c.passive;
- renderCards();updateUI();
+ if(c.auto) state.auto+=c.auto;
+
+ renderCards();
+ updateUI();
 }
 
-// ─── РЕФЕРАЛЬНАЯ КНОПКА ───
-function claimReferral(){
- if(!state.refClaimed){
-  state.coins+=500;
-  state.refClaimed=true;
-  alert("Вы получили 500 монет за реферальную ссылку!");
-  updateUI();
-}else alert("Реферальный бонус уже получен.");
+// ---------- РЕФ ССЫЛКА ----------
+function initRef(){
+ let id=localStorage.getItem("refid");
+ if(!id){
+   id=Math.random().toString(36).substr(2,8);
+   localStorage.setItem("refid",id);
+ }
+ refLink.value=location.origin+location.pathname+"?ref="+id;
 }
 
-// ─── ПАНЕЛИ ───
-function show(id){document.querySelectorAll(".panel").forEach(p=>p.style.display="none");document.getElementById(id).style.display="block"}
-function hidePanels(){document.querySelectorAll(".panel").forEach(p=>p.style.display="none")}
+// ---------- ПАНЕЛИ ----------
+function show(id){hide();document.getElementById(id).style.display="block"}
+function hide(){document.querySelectorAll(".panel").forEach(p=>p.style.display="none")}
 
+renderShop();
+renderCards();
+initRef();
 updateUI();
 </script>
+
 </body>
 </html>
