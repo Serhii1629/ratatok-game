@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RATATOK Clicker</title>
+<title>RATATOK Tapper</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0b0b0f;color:#fff;font-family:Arial,sans-serif}
@@ -45,10 +45,16 @@ button:active{background:#333}
   <div id="cards"></div>
 </div>
 
+<div id="refPanel" class="panel">
+  <h3>🔗 Реферальная система</h3>
+  <button onclick="claimReferral()">Получить бонус</button>
+</div>
+
 <div id="menu">
   <button onclick="hidePanels()">🎮</button>
   <button onclick="show('shop')">🛒</button>
   <button onclick="show('cardsPanel')">🃏</button>
+  <button onclick="show('refPanel')">🔗</button>
 </div>
 
 <script>
@@ -69,7 +75,9 @@ const SHOP=[
 const CARDS=[
  {id:1,name:"+1 за тап",tap:1,price:100,rarity:"common"},
  {id:2,name:"+5 за тап",tap:5,price:500,rarity:"rare"},
- {id:3,name:"+15 пассивно/сек",passive:15,price:2000,rarity:"legendary"}
+ {id:3,name:"+15 пассивно/сек",passive:15,price:2000,rarity:"legendary"},
+ {id:4,name:"+50 пассивно/сек",passive:50,price:10000,rarity:"legendary"},
+ {id:5,name:"+100 пассивно/сек",passive:100,price:50000,rarity:"legendary"}
 ];
 
 // ─── СОСТОЯНИЕ ───
@@ -80,7 +88,8 @@ let state=JSON.parse(localStorage.getItem("ratatok"))||{
  auto:0,
  passive:0,
  taps:0,
- cards:{}
+ cards:{},
+ refClaimed:false
 };
 
 // ─── Сохранение ───
@@ -97,11 +106,12 @@ const cardsDiv=document.getElementById("cards");
 function updateUI(){
  coins.textContent=state.coins;
  energy.textContent=state.energy;
- // Крыса по тапам
  let current=RATS[0];
  RATS.forEach(r=>{if(state.taps>=r.need) current=r});
  ratEl.textContent=current.icon;
  ratName.textContent=current.name;
+ renderShop();
+ renderCards();
  save();
 }
 
@@ -140,7 +150,6 @@ function buyShop(id){
  if(item.type=="auto") state.auto+=item.value;
  renderShop();updateUI();
 }
-renderShop();
 
 // ─── КАРТОЧКИ ───
 function renderCards(){
@@ -167,7 +176,16 @@ function buyCard(id){
  if(c.passive) state.passive+=c.passive;
  renderCards();updateUI();
 }
-renderCards();
+
+// ─── РЕФЕРАЛЬНАЯ КНОПКА ───
+function claimReferral(){
+ if(!state.refClaimed){
+  state.coins+=500;
+  state.refClaimed=true;
+  alert("Вы получили 500 монет за реферальную ссылку!");
+  updateUI();
+}else alert("Реферальный бонус уже получен.");
+}
 
 // ─── ПАНЕЛИ ───
 function show(id){document.querySelectorAll(".panel").forEach(p=>p.style.display="none");document.getElementById(id).style.display="block"}
