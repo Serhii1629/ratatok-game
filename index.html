@@ -4,141 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>RATATOK</title>
-
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{
-  margin:0;
-  background:#0b0b0f;
-  color:#fff;
-  font-family:Arial, sans-serif;
-}
-
-/* TOP */
-#top{
-  display:flex;
-  justify-content:space-between;
-  padding:12px;
-  font-size:15px;
-}
-
-/* GAME */
-#game{
-  height:32vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-}
-#rat-wrap{
-  width:220px;
-  height:220px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  position:relative;
-}
-#rat{
-  width:120px;
-  height:120px;
-  font-size:80px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  border-radius:50%;
-  border:4px solid #555;
-  transition:transform .08s ease, border-color .3s ease, box-shadow .3s ease;
-}
-#rat.tap{ transform:scale(1.08); }
-
-/* RAT LABEL */
-#ratLabel{
-  margin-top:10px;
-  text-align:center;
-  font-size:16px;
-}
-
-/* rarity borders */
+body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial, sans-serif;}
+#top{display:flex;justify-content:space-between;padding:12px;font-size:15px;}
+#game{height:35vh;display:flex;flex-direction:column;justify-content:center;align-items:center;}
+#rat-wrap{width:220px;height:220px;display:flex;justify-content:center;align-items:center;position:relative;}
+#rat{width:120px;height:120px;font-size:80px;display:flex;justify-content:center;align-items:center;border-radius:50%;border:4px solid #555;transition:transform .08s ease,border-color .3s ease,box-shadow .3s ease;}
+#rat.tap{transform:scale(1.08);}
+#ratLabel{margin-top:10px;text-align:center;font-size:16px;}
 .common{border-color:#555;}
 .rare{border-color:#3b82f6;}
-.legendary{
-  border-color:gold;
-  box-shadow:0 0 15px gold;
-  animation: glow 1.5s infinite alternate;
-}
-
-/* glow animation for legendary */
-@keyframes glow {
-  0% { box-shadow:0 0 10px gold; }
-  50% { box-shadow:0 0 25px gold; }
-  100% { box-shadow:0 0 10px gold; }
-}
-
-/* MENU */
-#menu{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  display:flex;
-  background:#111;
-}
-.btn{
-  flex:1;
-  padding:14px;
-  border:none;
-  background:#1c1c28;
-  color:#fff;
-}
-.btn:active{background:#333}
-
-/* PANELS */
-.panel{
-  position:fixed;
-  bottom:55px;
-  width:100%;
-  max-height:55vh;
-  overflow:auto;
-  background:#14141c;
-  padding:12px;
-}
-.hidden{display:none}
-
-/* CARDS */
-.cards{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-}
-.card{
-  background:#1e1e2c;
-  border-radius:12px;
-  padding:10px;
-}
-.common{border:2px solid #555}
-.rare{border:2px solid #3b82f6}
-.legendary{border:2px solid gold;box-shadow:0 0 10px gold}
-.card button{
-  width:100%;
-  margin-top:6px;
-  padding:6px;
-  border:none;
-  border-radius:8px;
-  background:#2c2c44;
-  color:#fff;
-}
-.card button:disabled{opacity:.4}
-
-/* NFT */
-.nft{
-  background:#1e1e2c;
-  border-radius:12px;
-  padding:10px;
-  text-align:center;
-  margin-bottom:8px;
-}
+.legendary{border-color:gold;box-shadow:0 0 15px gold;animation: glow 1.5s infinite alternate;}
+@keyframes glow {0%{box-shadow:0 0 10px gold;}50%{box-shadow:0 0 25px gold;}100%{box-shadow:0 0 10px gold;}}
+#menu{position:fixed;bottom:0;width:100%;display:flex;background:#111;}
+.btn{flex:1;padding:14px;border:none;background:#1c1c28;color:#fff;}
+.btn:active{background:#333;}
+.panel{position:fixed;bottom:55px;width:100%;max-height:55vh;overflow:auto;background:#14141c;padding:12px;}
+.hidden{display:none;}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.card{background:#1e1e2c;border-radius:12px;padding:10px;}
+.card button{width:100%;margin-top:6px;padding:6px;border:none;border-radius:8px;background:#2c2c44;color:#fff;}
+.card button:disabled{opacity:.4;}
+.nft{background:#1e1e2c;border-radius:12px;padding:10px;text-align:center;margin-bottom:8px;}
 </style>
 </head>
-
 <body>
 
 <div id="top">
@@ -172,21 +62,9 @@ body{
 </div>
 
 <script>
-/* ─── BASE RAT DATA ─── */
-const BASE_RATS = [
-  {emoji:"🐀"},
-  {emoji:"🐁"},
-  {emoji:"🐭"},
-  {emoji:"🐹"},
-  {emoji:"🐰"},
-  {emoji:"🦝"},
-  {emoji:"🦡"},
-  {emoji:"🦨"}
-];
+const BASE_RATS=[{emoji:"🐀"},{emoji:"🐁"},{emoji:"🐭"},{emoji:"🐹"},{emoji:"🐰"},{emoji:"🦝"},{emoji:"🦡"},{emoji:"🦨"}];
+const RARITIES=["common","rare","legendary"];
 
-const RARITIES = ["common","rare","legendary"];
-
-/* ─── CARDS ─── */
 const CARDS=[
  {id:1,name:"Сильные лапы",tap:1,price:50,rarity:"common"},
  {id:2,name:"Острые зубы",tap:3,price:200,rarity:"rare"},
@@ -197,33 +75,20 @@ const CARDS=[
  {id:7,name:"Империя крыс",passive:15,price:3000,rarity:"legendary"}
 ];
 
-/* ─── NFT (DEMO) ─── */
 const NFTS=[
  {id:1,name:"Genesis Rat",img:"https://i.imgur.com/2yaf2wb.png"},
  {id:2,name:"Golden NFT Rat",img:"https://i.imgur.com/m7YQZ9Z.png"}
 ];
 
-/* ─── STATE ─── */
-const state = JSON.parse(localStorage.getItem("ratatok")) || {
- coins:0,
- energy:1000,
- level:1,
- tapPower:1,
- passive:0,
- cards:{},
- nfts:[],
- lastTime:Date.now(),
- taps:0
+const state = JSON.parse(localStorage.getItem("ratatok"))||{
+ coins:0,energy:1000,level:1,tapPower:1,passive:0,cards:{},nfts:[],lastTime:Date.now(),taps:0
 };
 
-/* ─── SAVE ─── */
-function save(){
- localStorage.setItem("ratatok",JSON.stringify(state));
-}
+function save(){localStorage.setItem("ratatok",JSON.stringify(state));}
 
-/* ─── UI ─── */
-const coinsEl=coins, energyEl=energy, levelEl=level, tapsEl=taps;
-const ratLabelEl = document.getElementById("ratLabel");
+const coinsEl=coins,energyEl=energy,levelEl=level,tapsEl=taps;
+const ratLabelEl=document.getElementById("ratLabel");
+
 function updateUI(){
  coinsEl.textContent=state.coins;
  energyEl.textContent=state.energy;
@@ -233,27 +98,24 @@ function updateUI(){
 }
 updateUI();
 
-/* ─── GENERATE RAT BASED ON TAPS ─── */
 function getRatForTaps(taps){
-  const index = Math.floor(Math.log10(Math.max(taps,1)));
-  const emoji = BASE_RATS[index % BASE_RATS.length].emoji;
-  const rarity = RARITIES[index % RARITIES.length];
-  const nextTap = Math.pow(10, index + 1);
-  return {emoji, rarity, number: index + 1, nextTap};
+  const index=Math.floor(Math.log10(Math.max(taps,1)));
+  const emoji=BASE_RATS[index % BASE_RATS.length].emoji;
+  const rarity=RARITIES[index % RARITIES.length];
+  const nextTap=Math.pow(10,index+1);
+  return {emoji,rarity,number:index+1,nextTap};
 }
 
-/* ─── UPDATE RAT DISPLAY ─── */
 function updateRat(){
-  const rat = getRatForTaps(state.taps);
-  const ratEl = document.getElementById("rat");
-  ratEl.textContent = rat.emoji;
+  const rat=getRatForTaps(state.taps);
+  const ratEl=document.getElementById("rat");
+  ratEl.textContent=rat.emoji;
   ratEl.classList.remove("common","rare","legendary");
   ratEl.classList.add(rat.rarity);
-  ratLabelEl.innerHTML = `Крыса #${rat.number}<br>Следующая: ${rat.nextTap.toLocaleString()} тапов`;
+  ratLabelEl.innerHTML=`Крыса #${rat.number}<br>Следующая: ${rat.nextTap.toLocaleString()} тапов`;
 }
 updateRat();
 
-/* ─── TAP ─── */
 const ratWrap=document.getElementById("rat-wrap");
 const ratEl=document.getElementById("rat");
 
@@ -270,21 +132,18 @@ function tap(){
 }
 
 ratWrap.onclick=tap;
-ratWrap.ontouchstart=e=>{e.preventDefault();tap()};
+ratWrap.ontouchstart=e=>{e.preventDefault();tap();}
 
-/* ─── LEVEL ─── */
 function checkLevel(){
  const need=state.level*500;
  if(state.coins>=need){
   state.level++;
-  // NFT награда
-  if(state.level===5 && !state.nfts.includes(1)) state.nfts.push(1);
-  if(state.level===10 && !state.nfts.includes(2)) state.nfts.push(2);
+  if(state.level===5&&!state.nfts.includes(1)) state.nfts.push(1);
+  if(state.level===10&&!state.nfts.includes(2)) state.nfts.push(2);
   renderNFTs();
  }
 }
 
-/* ─── PASSIVE ─── */
 setInterval(()=>{
  const now=Date.now();
  const sec=Math.floor((now-state.lastTime)/1000);
@@ -295,7 +154,6 @@ setInterval(()=>{
  }
 },1000);
 
-/* ─── CARDS ─── */
 function renderCards(){
  cards.innerHTML="";
  CARDS.forEach(c=>{
@@ -305,8 +163,7 @@ function renderCards(){
    <div class="card ${c.rarity}">
     <b>${c.name}</b><br>
     <small>${c.tap?`+${c.tap} за тап`:`+${c.passive}/сек`} • ур ${lvl}</small>
-    <button ${state.coins<price?"disabled":""}
-     onclick="buyCard(${c.id})">Купить (${price}💰)</button>
+    <button ${state.coins<price?"disabled":""} onclick="buyCard(${c.id})">Купить (${price}💰)</button>
    </div>`;
  });
 }
@@ -323,21 +180,15 @@ function buyCard(id){
 }
 renderCards();
 
-/* ─── NFT RENDER ─── */
 function renderNFTs(){
  nfts.innerHTML="";
  state.nfts.forEach(id=>{
   const n=NFTS.find(x=>x.id===id);
-  nfts.innerHTML+=`
-   <div class="nft">
-    <img src="${n.img}" width="80"><br>
-    ${n.name}
-   </div>`;
+  nfts.innerHTML+=`<div class="nft"><img src="${n.img}" width="80"><br>${n.name}</div>`;
  });
 }
 renderNFTs();
 
-/* ─── PANELS ─── */
 function show(id){
  document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
  document.getElementById(id).classList.remove("hidden");
@@ -346,6 +197,5 @@ function hidePanels(){
  document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
 }
 </script>
-
 </body>
 </html>
