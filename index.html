@@ -39,9 +39,10 @@ body{
 #rat{
   width:100%;
   height:100%;
-  background-size:contain;
-  background-position:center;
-  background-repeat:no-repeat;
+  font-size:120px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
   transition:transform .08s ease;
 }
 #rat.tap{ transform:scale(1.08); }
@@ -144,9 +145,9 @@ body{
 <script>
 /* ─── RATS ─── */
 const RATS = [
- {id:1,name:"Серая крыса",img:"https://i.imgur.com/2yaf2wb.png",rarity:"common",unlock:1},
- {id:2,name:"Чёрная крыса",img:"https://i.imgur.com/6X6Jv6s.png",rarity:"rare",unlock:4},
- {id:3,name:"Золотая крыса",img:"https://i.imgur.com/m7YQZ9Z.png",rarity:"legendary",unlock:8}
+ {id:1,name:"Серая крыса",emoji:"🐀",rarity:"common",unlock:1},
+ {id:2,name:"Чёрная крыса",emoji:"🐁",rarity:"rare",unlock:4},
+ {id:3,name:"Золотая крыса",emoji:"🐭",rarity:"legendary",unlock:8}
 ];
 
 /* ─── CARDS ─── */
@@ -195,8 +196,9 @@ updateUI();
 
 /* ─── RAT CHANGE BY LEVEL ─── */
 function updateRat(){
- const rat = RATS.filter(r=>r.unlock<=state.level).pop();
- document.getElementById("rat").style.backgroundImage=`url(${rat.img})`;
+ const rat = RATS.filter(r => r.unlock <= state.level).pop();
+ const ratEl = document.getElementById("rat");
+ ratEl.textContent = rat.emoji;
 }
 updateRat();
 
