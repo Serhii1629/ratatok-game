@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Рататок</title>
+<title>RATATOK</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -11,23 +11,39 @@ body {
     font-family: Arial, sans-serif;
     background: #121212;
     color: white;
-    text-align: center;
 }
 
 header {
+    text-align: center;
     font-size: 24px;
-    padding: 15px;
+    padding: 16px;
     background: #1f1f1f;
 }
 
+.panel {
+    display: none;
+    padding-bottom: 110px;
+}
+.panel.active {
+    display: block;
+}
+
+.game-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 #rat {
-    font-size: 110px;
-    margin: 20px 0;
+    font-size: 190px;
+    margin: 30px 0;
     user-select: none;
 }
 
 .stats {
     font-size: 18px;
+    text-align: center;
 }
 
 .menu {
@@ -37,21 +53,20 @@ header {
     background: #1f1f1f;
     display: flex;
     justify-content: space-around;
-    padding: 15px 0;
-    font-size: 18px;
+    padding: 20px 0;
+    font-size: 22px;
+    border-top: 2px solid #333;
+}
+
+.menu div {
+    padding: 12px 18px;
 }
 
 button {
+    width: 90%;
+    margin: 10px auto;
+    padding: 14px;
     font-size: 18px;
-    padding: 12px 18px;
-    margin: 5px;
-}
-
-.panel {
-    display: none;
-    padding-bottom: 90px;
-}
-.panel.active {
     display: block;
 }
 </style>
@@ -59,9 +74,10 @@ button {
 
 <body>
 
-<header>🐭 Рататок</header>
+<header>🐭 RATATOK</header>
 
-<div id="game" class="panel active">
+<!-- GAME -->
+<div id="game" class="panel active game-center">
     <div id="rat">🐀</div>
     <div class="stats">
         Тапы: <span id="score">0</span><br>
@@ -70,23 +86,26 @@ button {
     </div>
 </div>
 
+<!-- SHOP -->
 <div id="shop" class="panel">
-    <h2>🛒 Магазин</h2>
-    <button onclick="buyAuto()">Автокликер (+1)</button><br>
-    <button onclick="buyEnergy()">Энергия +50</button>
+    <h2 style="text-align:center">🛒 Магазин</h2>
+    <button onclick="buyAuto()">Автокликер (+1) — 200</button>
+    <button onclick="buyEnergy()">Энергия +50 — 100</button>
 </div>
 
+<!-- CARDS -->
 <div id="cards" class="panel">
-    <h2>🃏 Карточки</h2>
+    <h2 style="text-align:center">🃏 Карточки</h2>
     <div id="cardList"></div>
 </div>
 
+<!-- REF -->
 <div id="ref" class="panel">
-    <h2>🔗 Рефералка</h2>
-    <p>Твоя ссылка:</p>
-    <p id="refLink"></p>
+    <h2 style="text-align:center">🔗 Рефералка</h2>
+    <p style="text-align:center" id="refLink"></p>
 </div>
 
+<!-- MENU -->
 <div class="menu">
     <div onclick="openPanel('game')">🎮</div>
     <div onclick="openPanel('shop')">🛒</div>
@@ -116,9 +135,9 @@ const rats = [
 // ===== КАРТОЧКИ =====
 const cards = Array.from({ length: 20 }, (_, i) => ({
     id: i,
-    price: (i + 1) * 100,
-    bonus: i + 1,
-    bought: false
+    level: Number(localStorage.getItem(`card_${i}`)) || 0,
+    basePrice: 100 * (i + 1),
+    bonus: i + 1
 }));
 
 // ===== ЭЛЕМЕНТЫ =====
@@ -148,6 +167,7 @@ function updateUI() {
     ratEl.textContent = currentRat;
 }
 
+// ===== ТАП =====
 ratEl.onclick = () => {
     if (energy <= 0) return;
     score += power;
@@ -159,8 +179,9 @@ ratEl.onclick = () => {
 // ===== АВТОКЛИКЕР =====
 setInterval(() => {
     if (auto > 0 && energy > 0) {
-        score += auto;
-        energy -= auto;
+        const spend = Math.min(auto, energy);
+        score += spend;
+        energy -= spend;
         updateUI();
         save();
     }
@@ -179,39 +200,48 @@ function buyAuto() {
 function buyEnergy() {
     if (score >= 100) {
         score -= 100;
-        energy += 50;
-        if (energy > 100) energy = 100;
+        energy = Math.min(100, energy + 50);
         updateUI();
         save();
     }
 }
 
 // ===== КАРТОЧКИ =====
-cards.forEach(card => {
-    const btn = document.createElement("button");
-    btn.textContent = `Карточка +${card.bonus} (${card.price})`;
-    btn.onclick = () => {
-        if (!card.bought && score >= card.price) {
-            score -= card.price;
-            power += card.bonus;
-            card.bought = true;
-            btn.disabled = true;
-            btn.textContent += " ✅";
-            updateUI();
-            save();
-        }
-    };
-    cardList.appendChild(btn);
-});
+function renderCards() {
+    cardList.innerHTML = "";
+    cards.forEach(card => {
+        const price = card.basePrice * (card.level + 1);
+        const btn = document.createElement("button");
+        btn.textContent =
+            `Карточка ${card.id + 1} | Ур. ${card.level}
+Цена: ${price}
++${card.bonus} к тапу`;
+
+        btn.onclick = () => {
+            if (score >= price) {
+                score -= price;
+                card.level += 1;
+                power += card.bonus;
+                localStorage.setItem(`card_${card.id}`, card.level);
+                updateUI();
+                save();
+                renderCards();
+            }
+        };
+        cardList.appendChild(btn);
+    });
+}
 
 // ===== РЕФЕРАЛ =====
-const refLink = `https://t.me/${tg.initDataUnsafe.user?.username}?start=ref_${tg.initDataUnsafe.user?.id}`;
-document.getElementById("refLink").textContent = refLink;
+const user = tg.initDataUnsafe.user;
+document.getElementById("refLink").textContent =
+    user ? `https://t.me/${user.username}?start=ref_${user.id}` : "Открой через Telegram";
 
 // ===== МЕНЮ =====
 function openPanel(id) {
     document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
     document.getElementById(id).classList.add("active");
+    if (id === "cards") renderCards();
 }
 
 updateUI();
