@@ -2,278 +2,219 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>RATATOK</title>
+<title>Рататок</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{
-  margin:0;
-  background:#0b0b0f;
-  color:#fff;
-  font-family:Arial, sans-serif;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: white;
+    text-align: center;
 }
-#top{
-  display:flex;
-  justify-content:space-between;
-  padding:12px;
-  font-size:15px;
+
+header {
+    font-size: 24px;
+    padding: 15px;
+    background: #1f1f1f;
 }
-#game{
-  height:32vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+
+#rat {
+    font-size: 110px;
+    margin: 20px 0;
+    user-select: none;
 }
-#rat-wrap{
-  width:220px;
-  height:220px;
-  position:relative;
+
+.stats {
+    font-size: 18px;
 }
-#rat{
-  width:100%;
-  height:100%;
-  background:url("https://i.imgur.com/2yaf2wb.png") center/contain no-repeat;
+
+.menu {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #1f1f1f;
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 0;
+    font-size: 18px;
 }
-#tapEffect{
-  position:absolute;
-  inset:0;
-  border-radius:50%;
-  background:rgba(255,255,255,.15);
-  animation:tap .12s;
-  pointer-events:none;
+
+button {
+    font-size: 18px;
+    padding: 12px 18px;
+    margin: 5px;
 }
-@keyframes tap{
-  from{transform:scale(1);opacity:.4}
-  to{transform:scale(.92);opacity:0}
+
+.panel {
+    display: none;
+    padding-bottom: 90px;
 }
-#menu{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  display:flex;
-  background:#111;
-}
-.btn{
-  flex:1;
-  padding:14px;
-  border:none;
-  background:#1c1c28;
-  color:#fff;
-}
-.btn:active{background:#333}
-.panel{
-  position:fixed;
-  bottom:55px;
-  width:100%;
-  max-height:55vh;
-  overflow:auto;
-  background:#14141c;
-  padding:12px;
-}
-.hidden{display:none}
-.cards{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-}
-.card{
-  background:#1e1e2c;
-  border-radius:12px;
-  padding:10px;
-}
-.common{border:2px solid #555}
-.rare{border:2px solid #3b82f6}
-.legendary{border:2px solid gold;box-shadow:0 0 10px gold}
-.card button{
-  width:100%;
-  margin-top:6px;
-  padding:6px;
-  border:none;
-  border-radius:8px;
-  background:#2c2c44;
-  color:#fff;
-}
-.card button:disabled{opacity:.4}
-.case{
-  background:#1e1e2c;
-  border-radius:12px;
-  padding:10px;
-  margin-bottom:8px;
+.panel.active {
+    display: block;
 }
 </style>
 </head>
 
 <body>
 
-<div id="top">
-  <div>⚡ <span id="energy"></span></div>
-  <div>💰 <span id="coins"></span></div>
-  <div>⭐ <span id="level"></span></div>
+<header>🐭 Рататок</header>
+
+<div id="game" class="panel active">
+    <div id="rat">🐀</div>
+    <div class="stats">
+        Тапы: <span id="score">0</span><br>
+        Энергия: <span id="energy">100</span>/100<br>
+        Автокликер: <span id="auto">0</span>
+    </div>
 </div>
 
-<div id="game">
-  <div id="rat-wrap">
-    <div id="rat"></div>
-  </div>
+<div id="shop" class="panel">
+    <h2>🛒 Магазин</h2>
+    <button onclick="buyAuto()">Автокликер (+1)</button><br>
+    <button onclick="buyEnergy()">Энергия +50</button>
 </div>
 
-<div id="cardsPanel" class="panel hidden">
-  <h3>🃏 Карточки</h3>
-  <div class="cards" id="cards"></div>
+<div id="cards" class="panel">
+    <h2>🃏 Карточки</h2>
+    <div id="cardList"></div>
 </div>
 
-<div id="casesPanel" class="panel hidden">
-  <h3>🎁 Кейсы</h3>
-  <div id="cases"></div>
+<div id="ref" class="panel">
+    <h2>🔗 Рефералка</h2>
+    <p>Твоя ссылка:</p>
+    <p id="refLink"></p>
 </div>
 
-<div id="menu">
-  <button class="btn" onclick="hidePanels()">🎮</button>
-  <button class="btn" onclick="show('cardsPanel')">🃏</button>
-  <button class="btn" onclick="show('casesPanel')">🎁</button>
+<div class="menu">
+    <div onclick="openPanel('game')">🎮</div>
+    <div onclick="openPanel('shop')">🛒</div>
+    <div onclick="openPanel('cards')">🃏</div>
+    <div onclick="openPanel('ref')">🔗</div>
 </div>
 
-<!-- 🔥 FIREBASE (MODULE) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyB1Ln1WuJyjqFPEE6NblANZj-2P7SS7b40",
-    authDomain: "ratatok-33746.firebaseapp.com",
-    projectId: "ratatok-33746",
-    storageBucket: "ratatok-33746.firebasestorage.app",
-    messagingSenderId: "959368453562",
-    appId: "1:959368453562:web:35c128b473b74029a71183"
-  };
-
-  initializeApp(firebaseConfig);
-  console.log("🔥 Firebase подключён");
-</script>
-
-<!-- 🎮 GAME LOGIC -->
 <script>
-const CARDS=[
- {id:1,name:"Сильные лапы",tap:1,price:50,rarity:"common"},
- {id:2,name:"Острые зубы",tap:3,price:200,rarity:"rare"},
- {id:3,name:"Король крыс",tap:10,price:800,rarity:"legendary"},
- {id:4,name:"Подпольный бизнес",passive:2,price:400,rarity:"rare"},
- {id:5,name:"Крысиный банк",passive:6,price:1500,rarity:"legendary"}
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+// ===== СОСТОЯНИЕ =====
+let score = Number(localStorage.getItem("score")) || 0;
+let energy = Number(localStorage.getItem("energy")) || 100;
+let auto = Number(localStorage.getItem("auto")) || 0;
+let power = Number(localStorage.getItem("power")) || 1;
+
+// ===== КРЫСЫ ПО УРОВНЯМ =====
+const rats = [
+    { taps: 0, icon: "🐀" },
+    { taps: 500, icon: "🐁" },
+    { taps: 2000, icon: "🐭" },
+    { taps: 5000, icon: "🐹" },
+    { taps: 15000, icon: "👑🐭" }
 ];
 
-const CASES=[
- {id:1,name:"Обычный кейс",price:200,drops:[
-   {id:1,chance:60},{id:2,chance:30},{id:4,chance:10}
- ]},
- {id:2,name:"Золотой кейс",price:800,drops:[
-   {id:2,chance:40},{id:3,chance:30},{id:5,chance:30}
- ]}
-];
+// ===== КАРТОЧКИ =====
+const cards = Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    price: (i + 1) * 100,
+    bonus: i + 1,
+    bought: false
+}));
 
-const state=JSON.parse(localStorage.getItem("ratatok"))||{
- coins:0,energy:1000,level:1,
- tapPower:1,passive:0,
- cards:{},lastTime:Date.now()
+// ===== ЭЛЕМЕНТЫ =====
+const scoreEl = document.getElementById("score");
+const energyEl = document.getElementById("energy");
+const autoEl = document.getElementById("auto");
+const ratEl = document.getElementById("rat");
+const cardList = document.getElementById("cardList");
+
+// ===== ФУНКЦИИ =====
+function save() {
+    localStorage.setItem("score", score);
+    localStorage.setItem("energy", energy);
+    localStorage.setItem("auto", auto);
+    localStorage.setItem("power", power);
+}
+
+function updateUI() {
+    scoreEl.textContent = score;
+    energyEl.textContent = energy;
+    autoEl.textContent = auto;
+
+    let currentRat = rats[0].icon;
+    rats.forEach(r => {
+        if (score >= r.taps) currentRat = r.icon;
+    });
+    ratEl.textContent = currentRat;
+}
+
+ratEl.onclick = () => {
+    if (energy <= 0) return;
+    score += power;
+    energy -= 1;
+    updateUI();
+    save();
 };
 
-function save(){localStorage.setItem("ratatok",JSON.stringify(state));}
+// ===== АВТОКЛИКЕР =====
+setInterval(() => {
+    if (auto > 0 && energy > 0) {
+        score += auto;
+        energy -= auto;
+        updateUI();
+        save();
+    }
+}, 1000);
 
-const coinsEl=coins,energyEl=energy,levelEl=level;
-function updateUI(){
- coinsEl.textContent=state.coins;
- energyEl.textContent=state.energy;
- levelEl.textContent=state.level;
- save();
+// ===== МАГАЗИН =====
+function buyAuto() {
+    if (score >= 200) {
+        score -= 200;
+        auto += 1;
+        updateUI();
+        save();
+    }
 }
+
+function buyEnergy() {
+    if (score >= 100) {
+        score -= 100;
+        energy += 50;
+        if (energy > 100) energy = 100;
+        updateUI();
+        save();
+    }
+}
+
+// ===== КАРТОЧКИ =====
+cards.forEach(card => {
+    const btn = document.createElement("button");
+    btn.textContent = `Карточка +${card.bonus} (${card.price})`;
+    btn.onclick = () => {
+        if (!card.bought && score >= card.price) {
+            score -= card.price;
+            power += card.bonus;
+            card.bought = true;
+            btn.disabled = true;
+            btn.textContent += " ✅";
+            updateUI();
+            save();
+        }
+    };
+    cardList.appendChild(btn);
+});
+
+// ===== РЕФЕРАЛ =====
+const refLink = `https://t.me/${tg.initDataUnsafe.user?.username}?start=ref_${tg.initDataUnsafe.user?.id}`;
+document.getElementById("refLink").textContent = refLink;
+
+// ===== МЕНЮ =====
+function openPanel(id) {
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+
 updateUI();
-
-/* TAP */
-const ratWrap=document.getElementById("rat-wrap");
-ratWrap.onclick=ratWrap.ontouchstart=e=>{
- if(e) e.preventDefault();
- if(state.energy<=0) return;
- state.energy--;
- state.coins+=state.tapPower;
- const fx=document.createElement("div");
- fx.id="tapEffect";
- ratWrap.appendChild(fx);
- setTimeout(()=>fx.remove(),120);
- updateUI();
-};
-
-/* PASSIVE */
-setInterval(()=>{
- const now=Date.now();
- const sec=Math.floor((now-state.lastTime)/1000);
- if(sec>0){
-  state.coins+=state.passive*sec;
-  state.lastTime=now;
-  updateUI();
- }
-},1000);
-
-/* CARDS */
-function renderCards(){
- cards.innerHTML="";
- CARDS.forEach(c=>{
-  const lvl=state.cards[c.id]||0;
-  const price=c.price*(lvl+1);
-  cards.innerHTML+=`
-   <div class="card ${c.rarity}">
-    <b>${c.name}</b><br>
-    <small>${c.tap?`+${c.tap} за тап`:`+${c.passive}/сек`} • ур ${lvl}</small>
-    <button ${state.coins<price?"disabled":""}
-     onclick="buyCard(${c.id})">Купить (${price}💰)</button>
-   </div>`;
- });
-}
-function buyCard(id){
- const c=CARDS.find(x=>x.id===id);
- const lvl=state.cards[id]||0;
- const price=c.price*(lvl+1);
- if(state.coins<price) return;
- state.coins-=price;
- state.cards[id]=lvl+1;
- if(c.tap) state.tapPower+=c.tap;
- if(c.passive) state.passive+=c.passive;
- renderCards();updateUI();
-}
-renderCards();
-
-/* CASES */
-function renderCases(){
- cases.innerHTML="";
- CASES.forEach(c=>{
-  cases.innerHTML+=`
-   <div class="case">
-    <b>${c.name}</b><br>
-    <small>${c.price}💰</small><br>
-    <button ${state.coins<c.price?"disabled":""}
-     onclick="openCase(${c.id})">Открыть</button>
-   </div>`;
- });
-}
-function openCase(id){
- const c=CASES.find(x=>x.id===id);
- if(state.coins<c.price) return;
- state.coins-=c.price;
- let roll=Math.random()*100,sum=0;
- for(const d of c.drops){
-  sum+=d.chance;
-  if(roll<=sum){buyCard(d.id);break;}
- }
- renderCases();updateUI();
-}
-renderCases();
-
-/* PANELS */
-function show(id){
- document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
- document.getElementById(id).classList.remove("hidden");
-}
-function hidePanels(){
- document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
-}
 </script>
 
 </body>
