@@ -13,7 +13,6 @@ body {
     color: white;
 }
 
-/* HEADER */
 header {
     text-align: center;
     font-size: 24px;
@@ -21,7 +20,7 @@ header {
     background: #1f1f1f;
 }
 
-/* PANELS */
+/* ПАНЕЛИ */
 .panel {
     display: none;
     padding-bottom: 120px;
@@ -30,7 +29,7 @@ header {
     display: block;
 }
 
-/* GAME CENTER FIX */
+/* ЦЕНТР */
 .game-center {
     display: flex;
     flex-direction: column;
@@ -38,7 +37,7 @@ header {
     width: 100%;
 }
 
-/* RAT FIX */
+/* КРЫСА — БЕЗ УВЕЛИЧЕНИЯ */
 #rat-wrapper {
     width: 100%;
     display: flex;
@@ -49,15 +48,16 @@ header {
     font-size: 190px;
     margin: 30px 0;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* STATS */
+/* СТАТЫ */
 .stats {
     font-size: 18px;
     text-align: center;
 }
 
-/* MENU */
+/* МЕНЮ */
 .menu {
     position: fixed;
     bottom: 0;
@@ -74,7 +74,7 @@ header {
     padding: 12px 18px;
 }
 
-/* BUTTONS */
+/* КНОПКИ */
 button {
     width: 90%;
     margin: 10px auto;
@@ -108,45 +108,39 @@ button {
     <button onclick="buyEnergy()">Энергия +50 — 100</button>
 </div>
 
-<!-- CARDS -->
-<div id="cards" class="panel">
-    <h2 style="text-align:center">🃏 Карточки</h2>
-    <div id="cardList"></div>
-</div>
-
-<!-- TASKS -->
-<div id="tasks" class="panel">
-    <h2 style="text-align:center">📝 Задания</h2>
-    <div id="taskList"></div>
-</div>
-
-<!-- BONUS -->
-<div id="bonus" class="panel">
-    <h2 style="text-align:center">🎁 Ежедневный бонус</h2>
-    <button onclick="claimBonus()">Забрать бонус</button>
-    <p id="bonusStatus" style="text-align:center"></p>
-</div>
-
 <!-- MENU -->
 <div class="menu">
     <div onclick="openPanel('game')">🎮</div>
     <div onclick="openPanel('shop')">🛒</div>
-    <div onclick="openPanel('cards')">🃏</div>
-    <div onclick="openPanel('tasks')">📝</div>
-    <div onclick="openPanel('bonus')">🎁</div>
 </div>
 
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-/* STATE */
+/* ===== РЕФЕРАЛ (ОДИН РАЗ) ===== */
+if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    const user = tg.initDataUnsafe.user;
+    const startParam = tg.initDataUnsafe.start_param;
+
+    fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            telegram_id: user.id,
+            username: user.username || "",
+            ref: startParam || null
+        })
+    });
+}
+
+/* ===== СОСТОЯНИЕ ===== */
 let score = Number(localStorage.getItem("score")) || 0;
 let energy = Number(localStorage.getItem("energy")) || 100;
 let auto = Number(localStorage.getItem("auto")) || 0;
 let power = Number(localStorage.getItem("power")) || 1;
 
-/* RATS */
+/* ===== КРЫСЫ ПО УРОВНЯМ ===== */
 const rats = [
     { taps: 0, icon: "🐀" },
     { taps: 500, icon: "🐁" },
@@ -155,28 +149,13 @@ const rats = [
     { taps: 15000, icon: "👑🐭" }
 ];
 
-/* CARDS */
-const cards = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    level: Number(localStorage.getItem(`card_${i}`)) || 0,
-    basePrice: 100 * (i + 1),
-    bonus: i + 1
-}));
-
-/* TASKS */
-const tasks = [
-    { id: 1, text: "Сделай 100 тапов", need: 100, reward: 50 },
-    { id: 2, text: "Сделай 1000 тапов", need: 1000, reward: 300 },
-    { id: 3, text: "Купи автокликер", needAuto: 1, reward: 200 }
-];
-
-/* ELEMENTS */
+/* ===== ЭЛЕМЕНТЫ ===== */
 const scoreEl = document.getElementById("score");
 const energyEl = document.getElementById("energy");
 const autoEl = document.getElementById("auto");
 const ratEl = document.getElementById("rat");
 
-/* SAVE */
+/* ===== СОХРАНЕНИЕ ===== */
 function save() {
     localStorage.setItem("score", score);
     localStorage.setItem("energy", energy);
@@ -184,18 +163,20 @@ function save() {
     localStorage.setItem("power", power);
 }
 
-/* UI */
+/* ===== UI ===== */
 function updateUI() {
     scoreEl.textContent = score;
     energyEl.textContent = energy;
     autoEl.textContent = auto;
 
     let currentRat = rats[0].icon;
-    rats.forEach(r => { if (score >= r.taps) currentRat = r.icon; });
+    rats.forEach(r => {
+        if (score >= r.taps) currentRat = r.icon;
+    });
     ratEl.textContent = currentRat;
 }
 
-/* TAP */
+/* ===== ТАП ===== */
 ratEl.onclick = () => {
     if (energy <= 0) return;
     score += power;
@@ -204,7 +185,7 @@ ratEl.onclick = () => {
     save();
 };
 
-/* AUTO */
+/* ===== АВТОКЛИКЕР ===== */
 setInterval(() => {
     if (auto > 0 && energy > 0) {
         const spend = Math.min(auto, energy);
@@ -215,15 +196,16 @@ setInterval(() => {
     }
 }, 1000);
 
-/* SHOP */
+/* ===== МАГАЗИН ===== */
 function buyAuto() {
     if (score >= 200) {
         score -= 200;
-        auto++;
+        auto += 1;
         updateUI();
         save();
     }
 }
+
 function buyEnergy() {
     if (score >= 100) {
         score -= 100;
@@ -233,73 +215,10 @@ function buyEnergy() {
     }
 }
 
-/* CARDS */
-function renderCards() {
-    const list = document.getElementById("cardList");
-    list.innerHTML = "";
-    cards.forEach(card => {
-        const price = card.basePrice * (card.level + 1);
-        const btn = document.createElement("button");
-        btn.textContent = `Карточка ${card.id+1} | Ур. ${card.level} | Цена ${price}`;
-        btn.onclick = () => {
-            if (score >= price) {
-                score -= price;
-                card.level++;
-                power += card.bonus;
-                localStorage.setItem(`card_${card.id}`, card.level);
-                updateUI();
-                save();
-                renderCards();
-            }
-        };
-        list.appendChild(btn);
-    });
-}
-
-/* TASKS */
-function renderTasks() {
-    const list = document.getElementById("taskList");
-    list.innerHTML = "";
-    tasks.forEach(t => {
-        const done = localStorage.getItem("task_"+t.id);
-        if (done) return;
-
-        const btn = document.createElement("button");
-        btn.textContent = t.text + " | Награда: " + t.reward;
-        btn.onclick = () => {
-            if ((t.need && score >= t.need) || (t.needAuto && auto >= t.needAuto)) {
-                score += t.reward;
-                localStorage.setItem("task_"+t.id, true);
-                updateUI();
-                save();
-                renderTasks();
-            }
-        };
-        list.appendChild(btn);
-    });
-}
-
-/* DAILY BONUS */
-function claimBonus() {
-    const last = Number(localStorage.getItem("dailyBonus")) || 0;
-    const now = Date.now();
-    if (now - last >= 86400000) {
-        score += 200;
-        localStorage.setItem("dailyBonus", now);
-        updateUI();
-        save();
-        document.getElementById("bonusStatus").textContent = "Бонус получен!";
-    } else {
-        document.getElementById("bonusStatus").textContent = "Бонус уже был сегодня";
-    }
-}
-
-/* MENU */
+/* ===== МЕНЮ ===== */
 function openPanel(id) {
     document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
     document.getElementById(id).classList.add("active");
-    if (id === "cards") renderCards();
-    if (id === "tasks") renderTasks();
 }
 
 updateUI();
