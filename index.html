@@ -2,70 +2,103 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>RATATOK</title>
 
 <style>
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   margin:0;
   background:#0b0b0f;
   color:#fff;
-  font-family:Arial,sans-serif;
+  font-family:Arial, sans-serif;
 }
 #top{
   display:flex;
-  justify-content:space-around;
-  padding:10px;
-  background:#111;
-  font-size:14px;
+  justify-content:space-between;
+  padding:12px;
+  font-size:15px;
 }
-#tapArea{
-  height:42vh;
+#game{
+  height:32vh;
   display:flex;
   justify-content:center;
   align-items:center;
 }
-#ratBtn{
-  width:260px;
-  height:260px;
-  background-size:contain;
-  background-repeat:no-repeat;
-  background-position:center;
-  background-color:transparent;
-  border:none;
-  transition:transform .08s;
+#rat-wrap{
+  width:220px;
+  height:220px;
+  position:relative;
 }
-#ratBtn:active{transform:scale(1.12)}
-
+#rat{
+  width:100%;
+  height:100%;
+  background:url("https://i.imgur.com/2yaf2wb.png") center/contain no-repeat;
+}
+#tapEffect{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.15);
+  animation:tap .12s;
+  pointer-events:none;
+}
+@keyframes tap{
+  from{transform:scale(1);opacity:.4}
+  to{transform:scale(.92);opacity:0}
+}
 #menu{
   position:fixed;
   bottom:0;
   width:100%;
   display:flex;
+  background:#111;
 }
-#menu button{
+.btn{
   flex:1;
-  padding:12px;
+  padding:14px;
+  border:none;
   background:#1c1c28;
   color:#fff;
-  border:none;
 }
-
+.btn:active{background:#333}
 .panel{
-  display:none;
   position:fixed;
-  bottom:48px;
+  bottom:55px;
   width:100%;
-  max-height:50vh;
+  max-height:55vh;
   overflow:auto;
   background:#14141c;
-  padding:10px;
+  padding:12px;
+}
+.hidden{display:none}
+.cards{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
 }
 .card{
   background:#1e1e2c;
+  border-radius:12px;
   padding:10px;
-  border-radius:10px;
+}
+.common{border:2px solid #555}
+.rare{border:2px solid #3b82f6}
+.legendary{border:2px solid gold;box-shadow:0 0 10px gold}
+.card button{
+  width:100%;
+  margin-top:6px;
+  padding:6px;
+  border:none;
+  border-radius:8px;
+  background:#2c2c44;
+  color:#fff;
+}
+.card button:disabled{opacity:.4}
+.case{
+  background:#1e1e2c;
+  border-radius:12px;
+  padding:10px;
   margin-bottom:8px;
 }
 </style>
@@ -74,168 +107,126 @@ body{
 <body>
 
 <div id="top">
-  <div>💰 <span id="coins">0</span></div>
-  <div>⚡ <span id="energy">100</span></div>
-  <div>⭐ <span id="level">1</span></div>
+  <div>⚡ <span id="energy"></span></div>
+  <div>💰 <span id="coins"></span></div>
+  <div>⭐ <span id="level"></span></div>
 </div>
 
-<div id="tapArea">
-  <button id="ratBtn"></button>
+<div id="game">
+  <div id="rat-wrap">
+    <div id="rat"></div>
+  </div>
 </div>
 
-<div id="shop" class="panel">
-  <h3>🛒 Магазин</h3>
-  <div id="shopItems"></div>
-</div>
-
-<div id="cards" class="panel">
+<div id="cardsPanel" class="panel hidden">
   <h3>🃏 Карточки</h3>
-  <div id="cardItems"></div>
+  <div class="cards" id="cards"></div>
 </div>
 
-<div id="nft" class="panel">
-  <h3>🖼 NFT крысы (DEMO)</h3>
-  <div id="nftItems"></div>
-</div>
-
-<div id="airdrop" class="panel">
-  <h3>🎁 Аирдроп (DEMO)</h3>
-  <button onclick="claimAirdrop()">Получить 500 монет</button>
-</div>
-
-<div id="ref" class="panel">
-  <h3>🔗 Реферал</h3>
-  <p id="refLink"></p>
+<div id="casesPanel" class="panel hidden">
+  <h3>🎁 Кейсы</h3>
+  <div id="cases"></div>
 </div>
 
 <div id="menu">
-  <button onclick="hide()">🎮 Игра</button>
-  <button onclick="show('shop')">🛒</button>
-  <button onclick="show('cards')">🃏</button>
-  <button onclick="show('nft')">🖼</button>
-  <button onclick="show('airdrop')">🎁</button>
-  <button onclick="show('ref')">🔗</button>
+  <button class="btn" onclick="hidePanels()">🎮</button>
+  <button class="btn" onclick="show('cardsPanel')">🃏</button>
+  <button class="btn" onclick="show('casesPanel')">🎁</button>
 </div>
 
+<!-- 🔥 FIREBASE (MODULE) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB1Ln1WuJyjqFPEE6NblANZj-2P7SS7b40",
+    authDomain: "ratatok-33746.firebaseapp.com",
+    projectId: "ratatok-33746",
+    storageBucket: "ratatok-33746.firebasestorage.app",
+    messagingSenderId: "959368453562",
+    appId: "1:959368453562:web:35c128b473b74029a71183"
+  };
+
+  initializeApp(firebaseConfig);
+  console.log("🔥 Firebase подключён");
+</script>
+
+<!-- 🎮 GAME LOGIC -->
 <script>
-/* ---------- КРЫСЫ (БЕСКОНЕЧНО) ---------- */
-const RAT_IMAGES=[
- "https://i.imgur.com/2yaf2wb.png",
- "https://i.imgur.com/6X6Jv6s.png",
- "https://i.imgur.com/m7YQZ9Z.png",
- "https://i.imgur.com/p3xx6Gr.png"
+const CARDS=[
+ {id:1,name:"Сильные лапы",tap:1,price:50,rarity:"common"},
+ {id:2,name:"Острые зубы",tap:3,price:200,rarity:"rare"},
+ {id:3,name:"Король крыс",tap:10,price:800,rarity:"legendary"},
+ {id:4,name:"Подпольный бизнес",passive:2,price:400,rarity:"rare"},
+ {id:5,name:"Крысиный банк",passive:6,price:1500,rarity:"legendary"}
 ];
 
-/* ---------- СОСТОЯНИЕ ---------- */
-let state = JSON.parse(localStorage.getItem("ratatok_full")) || {
- coins:0,
- energy:100,
- level:1,
- taps:0,
- tapPower:1,
- auto:0,
- cards:{},
- nfts:[],
- last:Date.now(),
- refUsed:false
+const CASES=[
+ {id:1,name:"Обычный кейс",price:200,drops:[
+   {id:1,chance:60},{id:2,chance:30},{id:4,chance:10}
+ ]},
+ {id:2,name:"Золотой кейс",price:800,drops:[
+   {id:2,chance:40},{id:3,chance:30},{id:5,chance:30}
+ ]}
+];
+
+const state=JSON.parse(localStorage.getItem("ratatok"))||{
+ coins:0,energy:1000,level:1,
+ tapPower:1,passive:0,
+ cards:{},lastTime:Date.now()
 };
 
-function save(){
- localStorage.setItem("ratatok_full",JSON.stringify(state));
-}
+function save(){localStorage.setItem("ratatok",JSON.stringify(state));}
 
-/* ---------- UI ---------- */
-const coinsEl=coins,energyEl=energy,levelEl=level,ratBtn=document.getElementById("ratBtn");
-
-function currentRat(){
- return RAT_IMAGES[Math.floor(state.level/3)%RAT_IMAGES.length];
-}
-
-function update(){
+const coinsEl=coins,energyEl=energy,levelEl=level;
+function updateUI(){
  coinsEl.textContent=state.coins;
- energyEl.textContent=Math.floor(state.energy);
+ energyEl.textContent=state.energy;
  levelEl.textContent=state.level;
- ratBtn.style.backgroundImage=`url(${currentRat()})`;
  save();
 }
+updateUI();
 
-/* ---------- ТАП ---------- */
-ratBtn.onclick=()=>{
- if(state.energy<1) return;
+/* TAP */
+const ratWrap=document.getElementById("rat-wrap");
+ratWrap.onclick=ratWrap.ontouchstart=e=>{
+ if(e) e.preventDefault();
+ if(state.energy<=0) return;
  state.energy--;
  state.coins+=state.tapPower;
- state.taps++;
- if(state.taps>=state.level*500){
-   state.level++;
-   if(state.level%5===0) state.nfts.push(state.level);
- }
- update();
+ const fx=document.createElement("div");
+ fx.id="tapEffect";
+ ratWrap.appendChild(fx);
+ setTimeout(()=>fx.remove(),120);
+ updateUI();
 };
 
-/* ---------- ЭНЕРГИЯ ---------- */
+/* PASSIVE */
 setInterval(()=>{
- if(state.energy<100){
-   state.energy+=0.5;
-   update();
+ const now=Date.now();
+ const sec=Math.floor((now-state.lastTime)/1000);
+ if(sec>0){
+  state.coins+=state.passive*sec;
+  state.lastTime=now;
+  updateUI();
  }
 },1000);
 
-/* ---------- АВТОКЛИК ---------- */
-setInterval(()=>{
- if(state.auto>0){
-   state.coins+=state.auto;
-   update();
- }
-},1000);
-
-/* ---------- МАГАЗИН ---------- */
-const SHOP=[
- {id:1,name:"+50 энергии",price:200,energy:50},
- {id:2,name:"Автоклик +1/сек",price:600,auto:1}
-];
-
-function renderShop(){
- shopItems.innerHTML="";
- SHOP.forEach(i=>{
-  shopItems.innerHTML+=`
-   <div class="card">
-    ${i.name}<br>${i.price} 💰
-    <button ${state.coins<i.price?"disabled":""}
-      onclick="buyShop(${i.id})">Купить</button>
-   </div>`;
- });
-}
-
-function buyShop(id){
- const i=SHOP.find(x=>x.id===id);
- if(state.coins<i.price) return;
- state.coins-=i.price;
- if(i.energy) state.energy+=i.energy;
- if(i.auto) state.auto+=i.auto;
- update();renderShop();
-}
-
-/* ---------- КАРТОЧКИ ---------- */
-const CARDS=[
- {id:1,name:"+1 за тап",price:150,tap:1},
- {id:2,name:"+3 за тап",price:500,tap:3},
- {id:3,name:"+10 за тап",price:2000,tap:10}
-];
-
+/* CARDS */
 function renderCards(){
- cardItems.innerHTML="";
+ cards.innerHTML="";
  CARDS.forEach(c=>{
   const lvl=state.cards[c.id]||0;
   const price=c.price*(lvl+1);
-  cardItems.innerHTML+=`
-   <div class="card">
-    ${c.name} (ур ${lvl})<br>${price} 💰
+  cards.innerHTML+=`
+   <div class="card ${c.rarity}">
+    <b>${c.name}</b><br>
+    <small>${c.tap?`+${c.tap} за тап`:`+${c.passive}/сек`} • ур ${lvl}</small>
     <button ${state.coins<price?"disabled":""}
-     onclick="buyCard(${c.id})">Купить</button>
+     onclick="buyCard(${c.id})">Купить (${price}💰)</button>
    </div>`;
  });
 }
-
 function buyCard(id){
  const c=CARDS.find(x=>x.id===id);
  const lvl=state.cards[id]||0;
@@ -243,46 +234,46 @@ function buyCard(id){
  if(state.coins<price) return;
  state.coins-=price;
  state.cards[id]=lvl+1;
- state.tapPower+=c.tap;
- update();renderCards();
+ if(c.tap) state.tapPower+=c.tap;
+ if(c.passive) state.passive+=c.passive;
+ renderCards();updateUI();
 }
+renderCards();
 
-/* ---------- NFT (DEMO) ---------- */
-function renderNFT(){
- nftItems.innerHTML="";
- state.nfts.forEach(n=>{
-  nftItems.innerHTML+=`
-   <div class="card">NFT крыса • уровень ${n}</div>`;
+/* CASES */
+function renderCases(){
+ cases.innerHTML="";
+ CASES.forEach(c=>{
+  cases.innerHTML+=`
+   <div class="case">
+    <b>${c.name}</b><br>
+    <small>${c.price}💰</small><br>
+    <button ${state.coins<c.price?"disabled":""}
+     onclick="openCase(${c.id})">Открыть</button>
+   </div>`;
  });
 }
-
-/* ---------- АИРДРОП ---------- */
-function claimAirdrop(){
- state.coins+=500;
- update();
- alert("Аирдроп получен (DEMO)");
+function openCase(id){
+ const c=CASES.find(x=>x.id===id);
+ if(state.coins<c.price) return;
+ state.coins-=c.price;
+ let roll=Math.random()*100,sum=0;
+ for(const d of c.drops){
+  sum+=d.chance;
+  if(roll<=sum){buyCard(d.id);break;}
+ }
+ renderCases();updateUI();
 }
+renderCases();
 
-/* ---------- РЕФЕРАЛ ---------- */
-let ref=localStorage.getItem("ratatok_ref");
-if(!ref){
- ref=Math.random().toString(36).slice(2,8);
- localStorage.setItem("ratatok_ref",ref);
+/* PANELS */
+function show(id){
+ document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
+ document.getElementById(id).classList.remove("hidden");
 }
-refLink.textContent=location.origin+location.pathname+"?ref="+ref;
-
-const q=new URLSearchParams(location.search);
-if(q.get("ref")&&!state.refUsed){
- state.coins+=300;
- state.refUsed=true;
+function hidePanels(){
+ document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
 }
-
-/* ---------- ПАНЕЛИ ---------- */
-function show(id){hide();document.getElementById(id).style.display="block"}
-function hide(){document.querySelectorAll(".panel").forEach(p=>p.style.display="none")}
-
-/* ---------- INIT ---------- */
-renderShop();renderCards();renderNFT();update();
 </script>
 
 </body>
