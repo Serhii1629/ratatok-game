@@ -20,21 +20,21 @@ body{
   background:#111;
   font-weight:bold;
 }
-#tapArea{
+#tap-area{
   height:45vh;
   display:flex;
   justify-content:center;
   align-items:center;
 }
 #rat{
-  width:260px;
-  height:260px;
+  width:280px;
+  height:280px;
   background-size:contain;
   background-repeat:no-repeat;
   background-position:center;
-  transition:.08s;
+  transition:transform .08s;
 }
-#rat:active{transform:scale(1.1)}
+#rat:active{transform:scale(1.12)}
 #menu{
   position:fixed;
   bottom:0;
@@ -47,6 +47,7 @@ button{
   background:#1c1c28;
   color:#fff;
   border:none;
+  font-size:14px;
 }
 .panel{
   display:none;
@@ -64,44 +65,41 @@ button{
   border-radius:12px;
   margin-bottom:8px;
 }
-.common{border:2px solid #555}
-.rare{border:2px solid #3b82f6}
-.legendary{border:2px solid gold}
 </style>
 </head>
 
 <body>
 
 <div id="top">
-  <div>💰 <span id="coins">0</span></div>
-  <div>⚡ <span id="energy">100</span></div>
-  <div>⭐ <span id="level">1</span></div>
+  <div>💰 Монеты: <span id="coins">0</span></div>
+  <div>⚡ Энергия: <span id="energy">100</span></div>
+  <div>⭐ Уровень: <span id="level">1</span></div>
 </div>
 
-<div id="tapArea">
+<div id="tap-area">
   <div id="rat"></div>
 </div>
 
 <div id="shop" class="panel">
-  <h3>Магазин</h3>
+  <h3>🛒 Магазин</h3>
   <div id="shopItems"></div>
 </div>
 
 <div id="cards" class="panel">
-  <h3>Карточки</h3>
+  <h3>🃏 Карточки</h3>
   <div id="cardItems"></div>
 </div>
 
 <div id="ref" class="panel">
-  <h3>Реферал</h3>
+  <h3>🔗 Реферальная ссылка</h3>
   <p id="refLink"></p>
 </div>
 
 <div id="menu">
-  <button onclick="hide()">🎮</button>
-  <button onclick="show('shop')">🛒</button>
-  <button onclick="show('cards')">🃏</button>
-  <button onclick="show('ref')">🔗</button>
+  <button onclick="hidePanels()">🎮 Игра</button>
+  <button onclick="showPanel('shop')">🛒 Магазин</button>
+  <button onclick="showPanel('cards')">🃏 Карточки</button>
+  <button onclick="showPanel('ref')">🔗 Реферал</button>
 </div>
 
 <script>
@@ -110,12 +108,11 @@ const RATS=[
  {need:0,img:"https://i.imgur.com/2yaf2wb.png"},
  {need:1000,img:"https://i.imgur.com/6X6Jv6s.png"},
  {need:10000,img:"https://i.imgur.com/m7YQZ9Z.png"},
- {need:100000,img:"https://i.imgur.com/p3xx6Gr.png"},
- {need:1000000,img:"https://i.imgur.com/8vQYF0n.png"}
+ {need:100000,img:"https://i.imgur.com/p3xx6Gr.png"}
 ];
 
-/* ---------- ДАННЫЕ ---------- */
-let state=JSON.parse(localStorage.getItem("ratatok_full"))||{
+/* ---------- СОСТОЯНИЕ ---------- */
+let state=JSON.parse(localStorage.getItem("ratatok_fixed"))||{
  coins:0,
  energy:100,
  level:1,
@@ -126,12 +123,12 @@ let state=JSON.parse(localStorage.getItem("ratatok_full"))||{
  ref:false
 };
 
-function save(){localStorage.setItem("ratatok_full",JSON.stringify(state))}
+function save(){localStorage.setItem("ratatok_fixed",JSON.stringify(state))}
 
 /* ---------- UI ---------- */
 const coinsEl=coins,energyEl=energy,levelEl=level,ratEl=document.getElementById("rat");
 
-function currentRat(){
+function getRat(){
  let r=RATS[0];
  for(const x of RATS) if(state.taps>=x.need) r=x;
  return r;
@@ -141,11 +138,11 @@ function update(){
  coinsEl.textContent=state.coins;
  energyEl.textContent=Math.floor(state.energy);
  levelEl.textContent=state.level;
- ratEl.style.backgroundImage=`url(${currentRat().img})`;
+ ratEl.style.backgroundImage=`url(${getRat().img})`;
  save();
 }
 
-/* ---------- TAP ---------- */
+/* ---------- ТАП ---------- */
 ratEl.onclick=()=>{
  if(state.energy<1) return;
  state.energy--;
@@ -155,35 +152,29 @@ ratEl.onclick=()=>{
  update();
 };
 
-/* ---------- ЭНЕРГИЯ ---------- */
+/* ---------- ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ---------- */
 setInterval(()=>{
- if(state.energy<100) state.energy+=0.5;
- update();
-},1000);
-
-/* ---------- АВТОКЛИК ---------- */
-setInterval(()=>{
- if(state.auto>0){
-  state.coins+=state.auto;
-  update();
+ if(state.energy<100){
+   state.energy+=0.3;
+   update();
  }
 },1000);
 
 /* ---------- МАГАЗИН ---------- */
 const SHOP=[
- {id:1,name:"+50 энергии",price:100,energy:50},
- {id:2,name:"Автоклик +1",price:300,auto:1}
+ {id:1,name:"+50 энергии",price:150,energy:50},
+ {id:2,name:"Автоклик +1/сек",price:500,auto:1}
 ];
 
 function renderShop(){
  shopItems.innerHTML="";
  SHOP.forEach(i=>{
   shopItems.innerHTML+=`
-  <div class="card common">
-   ${i.name}<br>${i.price} 💰
-   <button ${state.coins<i.price?"disabled":""}
-    onclick="buyShop(${i.id})">Купить</button>
-  </div>`;
+   <div class="card">
+    ${i.name}<br>Цена: ${i.price} 💰
+    <button ${state.coins<i.price?"disabled":""}
+      onclick="buyShop(${i.id})">Купить</button>
+   </div>`;
  });
 }
 
@@ -196,11 +187,18 @@ function buyShop(id){
  update();renderShop();
 }
 
+/* ---------- АВТОКЛИК ---------- */
+setInterval(()=>{
+ if(state.auto>0){
+   state.coins+=state.auto;
+   update();
+ }
+},1000);
+
 /* ---------- КАРТОЧКИ ---------- */
 const CARDS=[
- {id:1,name:"+1 за тап",price:100,tap:1,rarity:"common"},
- {id:2,name:"+5 за тап",price:500,tap:5,rarity:"rare"},
- {id:3,name:"+10 автоклик",price:2000,auto:10,rarity:"legendary"}
+ {id:1,name:"+1 монета за тап",price:200,tap:1},
+ {id:2,name:"+5 монет за тап",price:1000,tap:5}
 ];
 
 function renderCards(){
@@ -209,11 +207,11 @@ function renderCards(){
   let lvl=state.cards[c.id]||0;
   let price=c.price*(lvl+1);
   cardItems.innerHTML+=`
-  <div class="card ${c.rarity}">
-   ${c.name} (ур ${lvl})<br>${price} 💰
-   <button ${state.coins<price?"disabled":""}
-    onclick="buyCard(${c.id})">Купить</button>
-  </div>`;
+   <div class="card">
+    ${c.name} (ур ${lvl})<br>${price} 💰
+    <button ${state.coins<price?"disabled":""}
+      onclick="buyCard(${c.id})">Купить</button>
+   </div>`;
  });
 }
 
@@ -224,29 +222,33 @@ function buyCard(id){
  if(state.coins<price) return;
  state.coins-=price;
  state.cards[id]=lvl+1;
- if(c.tap) state.tapPower+=c.tap;
- if(c.auto) state.auto+=c.auto;
+ state.tapPower+=c.tap;
  update();renderCards();
 }
 
-/* ---------- РЕФ ---------- */
-let refCode=localStorage.getItem("refCode");
+/* ---------- РЕФЕРАЛ ---------- */
+let refCode=localStorage.getItem("ratatok_ref");
 if(!refCode){
  refCode=Math.random().toString(36).slice(2,8);
- localStorage.setItem("refCode",refCode);
+ localStorage.setItem("ratatok_ref",refCode);
 }
 refLink.textContent=location.origin+location.pathname+"?ref="+refCode;
 
-let p=new URLSearchParams(location.search);
+const p=new URLSearchParams(location.search);
 if(p.get("ref")&&!state.ref){
- state.coins+=500;
+ state.coins+=300;
  state.ref=true;
- alert("Реферальный бонус +500");
+ alert("Реферальный бонус: +300 монет");
 }
 
-/* ---------- PANELS ---------- */
-function show(id){hide();document.getElementById(id).style.display="block";}
-function hide(){document.querySelectorAll(".panel").forEach(p=>p.style.display="none");}
+/* ---------- ПАНЕЛИ ---------- */
+function showPanel(id){
+ hidePanels();
+ document.getElementById(id).style.display="block";
+}
+function hidePanels(){
+ document.querySelectorAll(".panel").forEach(p=>p.style.display="none");
+}
 
 /* ---------- INIT ---------- */
 renderShop();renderCards();update();
