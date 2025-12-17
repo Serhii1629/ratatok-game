@@ -7,80 +7,49 @@
 
 <style>
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #121212;
-    color: white;
+  margin: 0;
+  background: #121212;
+  color: white;
+  font-family: Arial, sans-serif;
 }
-
 header {
-    text-align: center;
-    font-size: 24px;
-    padding: 16px;
-    background: #1f1f1f;
+  text-align: center;
+  padding: 16px;
+  font-size: 24px;
+  background: #1f1f1f;
 }
+.panel { display: none; padding-bottom: 120px; }
+.panel.active { display: block; }
 
-/* ПАНЕЛИ */
-.panel {
-    display: none;
-    padding-bottom: 120px;
-}
-.panel.active {
-    display: block;
-}
-
-/* ЦЕНТР */
-.game-center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-}
-
-/* КРЫСА — БЕЗ УВЕЛИЧЕНИЯ */
-#rat-wrapper {
-    width: 100%;
-    display: flex;
-    justify-content: center;
+.menu {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  background: #1f1f1f;
+  padding: 18px 0;
+  font-size: 22px;
 }
 
 #rat {
-    font-size: 190px;
-    margin: 30px 0;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+  font-size: 180px;
+  text-align: center;
+  margin: 30px 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#rat, #rat:active, #rat:focus {
+  transform: none !important;
+  transition: none !important;
 }
 
-/* СТАТЫ */
-.stats {
-    font-size: 18px;
-    text-align: center;
-}
-
-/* МЕНЮ */
-.menu {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: #1f1f1f;
-    display: flex;
-    justify-content: space-around;
-    padding: 20px 0;
-    font-size: 22px;
-    border-top: 2px solid #333;
-}
-
-.menu div {
-    padding: 12px 18px;
-}
-
-/* КНОПКИ */
 button {
-    width: 90%;
-    margin: 10px auto;
-    padding: 14px;
-    font-size: 18px;
-    display: block;
+  width: 90%;
+  margin: 10px auto;
+  padding: 14px;
+  font-size: 18px;
+  display: block;
 }
 </style>
 </head>
@@ -90,138 +59,152 @@ button {
 <header>🐭 RATATOK</header>
 
 <!-- GAME -->
-<div id="game" class="panel active game-center">
-    <div id="rat-wrapper">
-        <div id="rat">🐀</div>
-    </div>
-    <div class="stats">
-        Тапы: <span id="score">0</span><br>
-        Энергия: <span id="energy">100</span>/100<br>
-        Автокликер: <span id="auto">0</span>
-    </div>
+<div id="game" class="panel active">
+  <div id="rat">🐀</div>
+  <p style="text-align:center">
+    Тапы: <span id="score">0</span><br>
+    Энергия: <span id="energy">100</span><br>
+    Сила: <span id="power">1</span>
+  </p>
+</div>
+
+<!-- CARDS -->
+<div id="cards" class="panel">
+  <h2 style="text-align:center">🃏 Карточки</h2>
+  <div id="cardList"></div>
 </div>
 
 <!-- SHOP -->
 <div id="shop" class="panel">
-    <h2 style="text-align:center">🛒 Магазин</h2>
-    <button onclick="buyAuto()">Автокликер (+1) — 200</button>
-    <button onclick="buyEnergy()">Энергия +50 — 100</button>
+  <h2 style="text-align:center">🛒 Магазин</h2>
+  <button onclick="buyEnergy()">+50 энергии — 100</button>
+</div>
+
+<!-- AIRDROP -->
+<div id="airdrop" class="panel">
+  <h2 style="text-align:center">🪙 RATATOK AIRDROP</h2>
+  <p style="text-align:center">
+    ⭐ Очки: <span id="airdrop">0</span><br>
+    🎁 Примерно: <b><span id="reward">0</span> RATATOK</b>
+  </p>
+  <button onclick="copyRef()">🔗 Пригласить друга</button>
 </div>
 
 <!-- MENU -->
 <div class="menu">
-    <div onclick="openPanel('game')">🎮</div>
-    <div onclick="openPanel('shop')">🛒</div>
+  <div onclick="openPanel('game')">🎮</div>
+  <div onclick="openPanel('cards')">🃏</div>
+  <div onclick="openPanel('shop')">🛒</div>
+  <div onclick="openPanel('airdrop')">🪙</div>
 </div>
 
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-/* ===== РЕФЕРАЛ (ОДИН РАЗ) ===== */
-if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-    const user = tg.initDataUnsafe.user;
-    const startParam = tg.initDataUnsafe.start_param;
-
-    fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            telegram_id: user.id,
-            username: user.username || "",
-            ref: startParam || null
-        })
-    });
-}
-
-/* ===== СОСТОЯНИЕ ===== */
+/* STATE */
 let score = Number(localStorage.getItem("score")) || 0;
 let energy = Number(localStorage.getItem("energy")) || 100;
-let auto = Number(localStorage.getItem("auto")) || 0;
 let power = Number(localStorage.getItem("power")) || 1;
+let airdrop = Number(localStorage.getItem("airdrop")) || 0;
 
-/* ===== КРЫСЫ ПО УРОВНЯМ ===== */
-const rats = [
-    { taps: 0, icon: "🐀" },
-    { taps: 500, icon: "🐁" },
-    { taps: 2000, icon: "🐭" },
-    { taps: 5000, icon: "🐹" },
-    { taps: 15000, icon: "👑🐭" }
-];
-
-/* ===== ЭЛЕМЕНТЫ ===== */
+/* UI */
 const scoreEl = document.getElementById("score");
 const energyEl = document.getElementById("energy");
-const autoEl = document.getElementById("auto");
+const powerEl = document.getElementById("power");
+const airdropEl = document.getElementById("airdrop");
+const rewardEl = document.getElementById("reward");
 const ratEl = document.getElementById("rat");
 
-/* ===== СОХРАНЕНИЕ ===== */
-function save() {
-    localStorage.setItem("score", score);
-    localStorage.setItem("energy", energy);
-    localStorage.setItem("auto", auto);
-    localStorage.setItem("power", power);
-}
+/* CARDS */
+const cards = Array.from({ length: 5 }).map((_, i) => ({
+  id: i,
+  level: Number(localStorage.getItem("card_" + i)) || 0,
+  bonus: i + 1,
+  price: 200 * (i + 1)
+}));
 
-/* ===== UI ===== */
-function updateUI() {
-    scoreEl.textContent = score;
-    energyEl.textContent = energy;
-    autoEl.textContent = auto;
-
-    let currentRat = rats[0].icon;
-    rats.forEach(r => {
-        if (score >= r.taps) currentRat = r.icon;
-    });
-    ratEl.textContent = currentRat;
-}
-
-/* ===== ТАП ===== */
 ratEl.onclick = () => {
-    if (energy <= 0) return;
-    score += power;
-    energy -= 1;
-    updateUI();
-    save();
+  if (energy <= 0) return;
+  score += power;
+  energy--;
+  airdrop++;
+  save();
+  update();
 };
 
-/* ===== АВТОКЛИКЕР ===== */
-setInterval(() => {
-    if (auto > 0 && energy > 0) {
-        const spend = Math.min(auto, energy);
-        score += spend;
-        energy -= spend;
-        updateUI();
+function renderCards() {
+  const list = document.getElementById("cardList");
+  list.innerHTML = "";
+  cards.forEach(c => {
+    const cost = c.price * (c.level + 1);
+    const btn = document.createElement("button");
+    btn.textContent = `Карточка ${c.id + 1} | Ур.${c.level} | Цена ${cost}`;
+    btn.onclick = () => {
+      if (score >= cost) {
+        score -= cost;
+        c.level++;
+        power += c.bonus;
+        localStorage.setItem("card_" + c.id, c.level);
         save();
-    }
-}, 1000);
-
-/* ===== МАГАЗИН ===== */
-function buyAuto() {
-    if (score >= 200) {
-        score -= 200;
-        auto += 1;
-        updateUI();
-        save();
-    }
+        update();
+        renderCards();
+      }
+    };
+    list.appendChild(btn);
+  });
 }
 
 function buyEnergy() {
-    if (score >= 100) {
-        score -= 100;
-        energy = Math.min(100, energy + 50);
-        updateUI();
-        save();
-    }
+  if (score >= 100) {
+    score -= 100;
+    energy = Math.min(100, energy + 50);
+    save();
+    update();
+  }
 }
 
-/* ===== МЕНЮ ===== */
 function openPanel(id) {
-    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "cards") renderCards();
 }
 
-updateUI();
+function copyRef() {
+  if (!tg.initDataUnsafe.user) return;
+  const id = tg.initDataUnsafe.user.id;
+  navigator.clipboard.writeText(`https://t.me/ТВОЙ_БОТ?start=ref_${id}`);
+  tg.showAlert("Реферальная ссылка скопирована");
+}
+
+function save() {
+  localStorage.setItem("score", score);
+  localStorage.setItem("energy", energy);
+  localStorage.setItem("power", power);
+  localStorage.setItem("airdrop", airdrop);
+}
+
+function update() {
+  scoreEl.textContent = score;
+  energyEl.textContent = energy;
+  powerEl.textContent = power;
+  airdropEl.textContent = airdrop;
+  rewardEl.textContent = Math.floor(airdrop * 0.3);
+}
+update();
+
+/* REFERRAL AUTH */
+if (tg.initDataUnsafe.user) {
+  fetch("/api/auth", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      telegram_id: tg.initDataUnsafe.user.id,
+      username: tg.initDataUnsafe.user.username || "",
+      ref: tg.initDataUnsafe.start_param || null
+    })
+  });
+}
 </script>
 
 </body>
